@@ -40,18 +40,50 @@ public class CrateConfirmMenu extends Menu {
     private final CratesPlugin plugin;
     private final Crate crate;
     private final int rewardKey;
+    /** one copy of the reward item */
     private final ItemStack reward;
+    /** how many items one purchase hands over - the stack size configured in crates.yml */
+    private final int bundle;
     private final Restrictions.Rule rule;
+    private final int minAmount;
+    private final int maxAmount;
+    /** number of purchases selected, each costing one key */
     private int amount;
 
     public CrateConfirmMenu(CratesPlugin plugin, Crate crate, int rewardKey, ItemStack reward, int amount) {
         this.plugin = plugin;
         this.crate = crate;
         this.rewardKey = rewardKey;
+        // A reward saved as "16 spawners" hands over all 16 for one key, so the configured stack
+        // size is the purchase unit rather than something to be thrown away.
+        this.bundle = Math.max(1, reward.getAmount());
         this.reward = reward.clone();
         this.reward.setAmount(1);
         this.rule = Restrictions.resolve(plugin, this.reward.getType());
+
+        int globalMax = Math.max(1, plugin.getMainConfig().getInt("CONFIRM-MENU.MAX-AMOUNT", 64));
+        boolean inItems = plugin.getMainConfig().getBoolean("CONFIRM-MENU.RESTRICTIONS-IN-ITEMS", true);
+        if (this.rule.getMaxPurchases() > 0) {
+            // MAX_PURCHASES wins: an explicit "you may buy this many times".
+            this.maxAmount = Math.min(globalMax, this.rule.getMaxPurchases());
+            this.minAmount = 1;
+        } else if (inItems) {
+            // MAX_QUANTITY counts items, so a 16 spawner reward capped at 16 items is one purchase.
+            this.maxAmount = Math.max(1, Math.min(globalMax, this.rule.getMax() / this.bundle));
+            this.minAmount = Math.max(1, (int) Math.ceil((double) this.rule.getMin() / this.bundle));
+        } else {
+            this.maxAmount = Math.min(globalMax, this.rule.getMax());
+            this.minAmount = this.rule.getMin();
+        }
         this.amount = clamp(amount);
+    }
+
+    public int getBundle() {
+        return this.bundle;
+    }
+
+    private boolean hideQuantityButtons() {
+        return this.rule.isHideButtons() || this.maxAmount <= this.minAmount;
     }
 
     private FileConfiguration config() {
@@ -59,7 +91,7 @@ public class CrateConfirmMenu extends Menu {
     }
 
     private int clamp(int value) {
-        return Math.max(this.rule.getMin(), Math.min(this.rule.getMax(), value));
+        return Math.max(this.minAmount, Math.min(this.maxAmount, value));
     }
 
     /**
@@ -67,7 +99,7 @@ public class CrateConfirmMenu extends Menu {
      */
     public int getMaxSelectable(Player player) {
         int keys = this.plugin.getProfileManager().getProfile(player).getKeyAmount(this.crate.getKey());
-        return Math.max(this.rule.getMin(), Math.min(this.rule.getMax(), Math.max(this.rule.getMin(), keys)));
+        return Math.max(this.minAmount, Math.min(this.maxAmount, Math.max(this.minAmount, keys)));
     }
 
     public int getAmount() {
@@ -75,7 +107,7 @@ public class CrateConfirmMenu extends Menu {
     }
 
     public void setAmount(Player player, int amount) {
-        this.amount = Math.max(this.rule.getMin(), Math.min(getMaxSelectable(player), amount));
+        this.amount = Math.max(this.minAmount, Math.min(getMaxSelectable(player), amount));
     }
 
     @Override
@@ -131,7 +163,7 @@ public class CrateConfirmMenu extends Menu {
         buttons.put(config().getInt("CONFIRM-MENU.ITEM-SLOT", 22), new RewardDisplayButton());
 
         // Quantity buttons, hidden for one-per-purchase items such as totems and shulker boxes.
-        if (!this.rule.isHideButtons()) {
+        if (!hideQuantityButtons()) {
             buttons.putAll(quantityButtons("ADD", player));
             buttons.putAll(quantityButtons("REMOVE", player));
         }
@@ -238,7 +270,7 @@ public class CrateConfirmMenu extends Menu {
      */
     private int resultOf(Mode mode, int value, Player player) {
         int max = getMaxSelectable(player);
-        int min = this.rule.getMin();
+        int min = this.minAmount;
         switch (mode) {
             case SET:
                 return Math.max(min, Math.min(max, value));
@@ -256,7 +288,7 @@ public class CrateConfirmMenu extends Menu {
 
     private boolean isUsable(Mode mode, int value, Player player) {
         int max = getMaxSelectable(player);
-        int min = this.rule.getMin();
+        int min = this.minAmount;
         int result = resultOf(mode, value, player);
         switch (mode) {
             case ADD:
@@ -283,12 +315,18 @@ public class CrateConfirmMenu extends Menu {
             return out;
         }
         for (String line : lore) {
+            if (this.bundle <= 1 && line.contains("%items%")) {
+                // Nothing to spell out when one purchase is one item.
+                continue;
+            }
             out.add(line
                     .replace("%amount%", String.valueOf(this.amount))
+                    .replace("%items%", String.valueOf(this.amount * this.bundle))
+                    .replace("%each%", String.valueOf(this.bundle))
                     .replace("%cost%", String.valueOf(this.amount))
                     .replace("%keys%", String.valueOf(profile.getKeyAmount(this.crate.getKey())))
                     .replace("%crate%", this.crate.getName())
-                    .replace("%min%", String.valueOf(this.rule.getMin()))
+                    .replace("%min%", String.valueOf(this.minAmount))
                     .replace("%max%", String.valueOf(getMaxSelectable(player))));
         }
         return out;
@@ -311,13 +349,14 @@ public class CrateConfirmMenu extends Menu {
         if (!dropOverflow) {
             // Fill whatever room there is instead of refusing the whole purchase. 64 chestplates
             // need 64 free slots and nobody has that, so buy as many as actually fit.
-            int room = InventoryUtil.fitCount(player, this.reward, requested);
-            if (room <= 0) {
+            int roomItems = InventoryUtil.fitCount(player, this.reward, requested * this.bundle);
+            int roomPurchases = roomItems / this.bundle;
+            if (roomPurchases <= 0) {
                 this.plugin.message(player, "INVENTORY_FULL");
                 player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
                 return;
             }
-            delivered = Math.min(requested, room);
+            delivered = Math.min(requested, roomPurchases);
         }
 
         if (!profile.takeKeys(this.crate.getKey(), delivered)) {
@@ -329,7 +368,7 @@ public class CrateConfirmMenu extends Menu {
 
         // addItem only tops up matching stacks and uses empty slots, so nothing already in the
         // inventory is ever overwritten.
-        List<ItemStack> stacks = InventoryUtil.split(this.reward, delivered);
+        List<ItemStack> stacks = InventoryUtil.split(this.reward, delivered * this.bundle);
         List<ItemStack> leftovers = InventoryUtil.give(player, stacks, dropOverflow);
         for (ItemStack leftover : leftovers) {
             player.getWorld().dropItemNaturally(player.getLocation(), leftover);
@@ -340,12 +379,16 @@ public class CrateConfirmMenu extends Menu {
 
         this.plugin.message(player, "REWARD_RECEIVED",
                 "%amount%", String.valueOf(purchased),
+                "%items%", String.valueOf(purchased * this.bundle),
+                "%each%", String.valueOf(this.bundle),
                 "%crate%", this.crate.getName(),
                 "%item%", itemName());
         if (purchased < requested) {
             this.plugin.message(player, "INVENTORY_PARTIAL",
                     "%amount%", String.valueOf(purchased),
+                    "%items%", String.valueOf(purchased * this.bundle),
                     "%left%", String.valueOf(requested - purchased),
+                    "%left_items%", String.valueOf((requested - purchased) * this.bundle),
                     "%item%", itemName());
         }
         player.playSound(player.getLocation(),
@@ -446,7 +489,9 @@ public class CrateConfirmMenu extends Menu {
         @Override
         public ItemStack getButtonItem(Player player) {
             ItemStack display = CrateConfirmMenu.this.reward.clone();
-            display.setAmount(Math.max(1, Math.min(64, CrateConfirmMenu.this.amount)));
+            // Show what you actually receive: 1 purchase of a 16 spawner reward renders as 16.
+            display.setAmount(Math.max(1, Math.min(64,
+                    CrateConfirmMenu.this.amount * CrateConfirmMenu.this.bundle)));
             List<String> lore = replaceLore(config().getStringList("CONFIRM-MENU.ITEM-LORE"), player);
             return lore.isEmpty() ? display : new ItemBuilder(display).appendLore(lore).build();
         }
@@ -486,7 +531,7 @@ public class CrateConfirmMenu extends Menu {
         @Override
         public void clicked(Player player, int slot, ClickType clickType) {
             int max = getMaxSelectable(player);
-            int min = CrateConfirmMenu.this.rule.getMin();
+            int min = CrateConfirmMenu.this.minAmount;
             int current = CrateConfirmMenu.this.amount;
             switch (this.mode) {
                 case SET:

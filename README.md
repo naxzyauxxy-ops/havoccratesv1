@@ -106,6 +106,24 @@ never refused outright:
   up first, then empty slots are used, so nothing already in the inventory is replaced.
   `INVENTORY_FULL` now only fires when there is genuinely no room at all.
 
+## Reward stack sizes
+
+A reward saved in `crates.yml` with a stack size is handed over whole: `Gold` stores 16 spawners
+per slot, so one key gives **16 spawners**, and `Loot` stores 64 blocks, so one key gives a full
+stack. The amount selector counts *purchases* - buying 3 of a 16 spawner reward costs 3 keys and
+gives 48 spawners.
+
+That interacts with `RESTRICTIONS`:
+
+* `RESTRICTIONS-IN-ITEMS: true` (default) - `MAX_QUANTITY` counts **items**, so
+  `SPAWNER: { MAX_QUANTITY: 16 }` on a 16 spawner reward is exactly one purchase.
+* `MAX_PURCHASES` on a restriction overrides the maths and caps how many times a reward can be
+  bought at once, e.g. `DIAMOND_BLOCK: { MAX_PURCHASES: 10 }` allows 10 x 64 blocks.
+* `RESTRICTIONS-IN-ITEMS: false` - `MAX_QUANTITY` counts purchases instead.
+
+Lore placeholders: `%amount%` (purchases), `%items%` (total items), `%each%` (items per purchase).
+Lines containing `%items%` are skipped automatically when a purchase is a single item.
+
 ## Per item restrictions
 
 ```yaml
@@ -166,7 +184,7 @@ mvn clean package
 Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin targets 21 as
 well (that is also the Java version Minecraft 1.20.6+ servers run on).
 
-Output: `target/HavocCrates-3.3.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
+Output: `target/HavocCrates-3.4.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
 builds on every push, uploads the jar as an artifact, and attaches it to a release on a `v*` tag.
 
 ### Building for a Java 17 server

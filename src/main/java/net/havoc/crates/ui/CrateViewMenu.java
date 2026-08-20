@@ -113,15 +113,19 @@ public class CrateViewMenu extends Menu {
             int keys = CrateViewMenu.this.plugin.getProfileManager()
                     .getProfile(player).getKeyAmount(CrateViewMenu.this.crate.getKey());
             int stack = stackAmount(player);
+            int bundle = Math.max(1, this.itemStack.getAmount());
             List<String> lore = new ArrayList<>();
             for (String line : configured) {
-                if (stack <= 1 && line.contains("%stack%")) {
+                if (stack <= 1 && (line.contains("%stack%") || line.contains("%items%"))) {
                     // Single purchase items (totems, shulkers) have nothing to bulk buy.
                     continue;
                 }
                 lore.add(line
                         .replace("%keys%", String.valueOf(keys))
                         .replace("%stack%", String.valueOf(stack))
+                        .replace("%each%", String.valueOf(bundle))
+                        .replace("%items%", String.valueOf(stack * bundle))
+                        .replace("%one%", String.valueOf(bundle))
                         .replace("%crate%", CrateViewMenu.this.crate.getName()));
             }
             return new ItemBuilder(this.itemStack).appendLore(lore).build();
@@ -134,14 +138,33 @@ public class CrateViewMenu extends Menu {
             Restrictions.Rule rule = Restrictions.resolve(CrateViewMenu.this.plugin, this.itemStack.getType());
             int keys = CrateViewMenu.this.plugin.getProfileManager()
                     .getProfile(player).getKeyAmount(CrateViewMenu.this.crate.getKey());
+            // One purchase hands over the stack configured in crates.yml, so counting is done in
+            // purchases: a reward of 16 spawners capped at 16 items is a single purchase.
+            int bundle = Math.max(1, this.itemStack.getAmount());
+            boolean inItems = CrateViewMenu.this.plugin.getMainConfig()
+                    .getBoolean("CONFIRM-MENU.RESTRICTIONS-IN-ITEMS", true);
+            int globalMax = Math.max(1, CrateViewMenu.this.plugin.getMainConfig()
+                    .getInt("CONFIRM-MENU.MAX-AMOUNT", 64));
+            int max;
+            int min;
+            if (rule.getMaxPurchases() > 0) {
+                max = Math.min(globalMax, rule.getMaxPurchases());
+                min = 1;
+            } else if (inItems) {
+                max = Math.max(1, Math.min(globalMax, rule.getMax() / bundle));
+                min = Math.max(1, (int) Math.ceil((double) rule.getMin() / bundle));
+            } else {
+                max = Math.min(globalMax, rule.getMax());
+                min = rule.getMin();
+            }
             int stackSize = Math.max(1, this.itemStack.getMaxStackSize());
             // Armour and other unstackable rewards still buy a full 64 unless restricted.
-            int wanted = stackSize > 1 ? stackSize : rule.getMax();
-            int amount = Math.min(wanted, rule.getMax());
+            int wanted = stackSize > 1 ? Math.max(1, stackSize / bundle) : max;
+            int amount = Math.min(wanted, max);
             if (keys > 0) {
                 amount = Math.min(amount, keys);
             }
-            return Math.max(rule.getMin(), amount);
+            return Math.max(min, amount);
         }
 
         @Override

@@ -31,8 +31,8 @@ CRATE-VIEW-MENU:
   # Appended under each reward. Lines containing %stack% are hidden for single purchase items.
   ITEM-LORE:
     - ""
-    - "&#FF5555▶ &cLeft click &7to buy &f1"
-    - "&#FF5555▶ &cRight click &7to buy &f%stack%"
+    - "&#FF5555▶ &cLeft click &7to buy &f%each%"
+    - "&#FF5555▶ &cRight click &7to buy &f%items%"
     - ""
     - "&7Your keys: &c%keys%"
 
@@ -49,6 +49,11 @@ CONFIRM-MENU:
   ITEM-SLOT: 22
   # Hard ceiling for every purchase, before RESTRICTIONS are applied.
   MAX-AMOUNT: 64
+  # A reward saved in crates.yml with a stack size (Gold = 16 spawners, Loot = 64 blocks) hands
+  # over that whole stack for one key.
+  #   true  -> MAX_QUANTITY below counts ITEMS, so SPAWNER: 16 with a 16 spawner reward = 1 buy
+  #   false -> MAX_QUANTITY counts purchases, so SPAWNER: 16 would allow 16 x 16 = 256 spawners
+  RESTRICTIONS-IN-ITEMS: true
   # Hides a quantity button when clicking it would not change anything, so "Remove 64" only shows
   # once you are above 64 and "Add 10" disappears at the limit. Set to false to always show them.
   HIDE-UNUSABLE-BUTTONS: true
@@ -60,6 +65,7 @@ CONFIRM-MENU:
   ITEM-LORE:
     - ""
     - "&8▪ &7Amount &8» &f%amount%"
+    - "&8▪ &7You get &8» &f%items% &7(&f%each% &7each)"
     - "&8▪ &7Cost &8» &c%cost% &7key(s)"
     - "&8▪ &7You have &8» &c%keys% &7key(s)"
     - ""
@@ -144,70 +150,94 @@ CONFIRM-MENU:
         - "&8▪ &7Buying &f%amount%&7 costs &c%cost%&7."
         - ""
 
-# Per material purchase limits. A key matches the material exactly or as a suffix, so
-# SHULKER_BOX also covers PINK_SHULKER_BOX. The most specific match wins, DEFAULT is the fallback.
+# Per material purchase limits. A key matches the material exactly, as a word suffix
+# (SHULKER_BOX -> WHITE_SHULKER_BOX) or as a plain suffix (BOW -> CROSSBOW, AXE -> PICKAXE).
+# The most specific match wins, DEFAULT is the fallback.
 # HIDE_QUANTITY_BUTTONS removes the green/red buttons entirely for that item.
+#
+# With RESTRICTIONS-IN-ITEMS: true (default) MAX_QUANTITY counts items, so a reward saved as
+# 16 spawners with SPAWNER: 16 is exactly one purchase that hands over all 16.
+#
+# MAX_PURCHASES overrides that maths when you want both: how much comes per key is the stack size
+# in crates.yml, and MAX_PURCHASES is how many times it can be bought at once. For example
+#   SPAWNER:  { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }                -> 1 buy  = 16 spawners
+#   DIAMOND_BLOCK: { MAX_PURCHASES: 10 }                           -> 10 buys = 10 x 64 blocks
 RESTRICTIONS:
-  TOTEM_OF_UNDYING:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  ENDER_PEARL:
-    MAX_QUANTITY: 16
-    MIN_QUANTITY: 1
-  SHIELD:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  BOW:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  CROSSBOW:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  TRIDENT:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  SHULKER_BOX:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  SPLASH_POTION:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  POTION:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  ENCHANTED_BOOK:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  MUSHROOM_STEW:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  RABBIT_STEW:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
-  HONEY_BOTTLE:
-    MAX_QUANTITY: 16
-    MIN_QUANTITY: 1
-  FLINT_AND_STEEL:
-    MAX_QUANTITY: 1
-    MIN_QUANTITY: 1
-    HIDE_QUANTITY_BUTTONS: true
+
+  # --- Economy-sensitive: deliberately below stack size ---
   SPAWNER:
-    MAX_QUANTITY: 64
+    MAX_QUANTITY: 16
     MIN_QUANTITY: 1
+
+  # --- Armor (stack size 1) ---
+  HELMET: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  CHESTPLATE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  LEGGINGS: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  BOOTS: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  HORSE_ARMOR: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  ELYTRA: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  SHIELD: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  TOTEM_OF_UNDYING: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+
+  # --- Tools & weapons (stack size 1) ---
+  SWORD: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  AXE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  PICKAXE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  SHOVEL: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  HOE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  MACE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  TRIDENT: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  BOW: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  FISHING_ROD: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  FLINT_AND_STEEL: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  SHEARS: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  SPYGLASS: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  BRUSH: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  ON_A_STICK: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+
+  # --- Consumables & containers (stack size 1) ---
+  POTION: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  SHULKER_BOX: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  ENCHANTED_BOOK: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  WRITABLE_BOOK: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  MUSHROOM_STEW: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  RABBIT_STEW: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  BEETROOT_SOUP: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  SUSPICIOUS_STEW: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  CAKE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  BUNDLE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  GOAT_HORN: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+
+  # --- Transport & misc (stack size 1) ---
+  MINECART: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  BOAT: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  RAFT: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  BED: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  SADDLE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  MILK_BUCKET: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  WATER_BUCKET: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  LAVA_BUCKET: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  POWDER_SNOW_BUCKET: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+
+  # --- Stack size 16 ---
+  ENDER_PEARL: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  ENDER_EYE: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  HONEY_BOTTLE: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  SNOWBALL: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  EGG: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  SPAWN_EGG: { MAX_QUANTITY: 64, MIN_QUANTITY: 1 }
+  BUCKET: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  SIGN: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  BANNER: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  ARMOR_STAND: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  WRITTEN_BOOK: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+
   DEFAULT:
     MAX_QUANTITY: 64
     MIN_QUANTITY: 1
+    # Uncomment to let any unlisted reward be bought several times over
+    # (a 64 block reward would then be up to 10 x 64 blocks):
+    # MAX_PURCHASES: 10
 
 MESSAGES:
   NO_PERMISSION: "&cYou don't have permission to do that."
@@ -215,8 +245,8 @@ MESSAGES:
   PLAYER_NOT_FOUND: "&cPlayer &#FF5555%player%&c is not online."
   NOT_ENOUGH_KEYS: "&cYou don't have enough keys. &8(&#FF5555%amount% &cneeded&8)"
   INVENTORY_FULL: "&cYour inventory is full!"
-  INVENTORY_PARTIAL: "&cOnly &#FF5555%amount%&c fit in your inventory - you were not charged for the other &#FF5555%left%&c."
-  REWARD_RECEIVED: "&cYou bought &#FF5555%amount%x %item% &cfrom &#FF5555%crate%&c."
+  INVENTORY_PARTIAL: "&cOnly &#FF5555%items%&c fit in your inventory - you were not charged for the other &#FF5555%left_items%&c."
+  REWARD_RECEIVED: "&cYou bought &#FF5555%items%x %item% &cfrom &#FF5555%crate%&c."
   NO_CRATE_FOUND: "&cCrate &#FF5555%crate%&c does not exist."
   CRATE_CREATED: "&cCreated the crate &#FF5555%crate%&c."
   CRATE_DELETED: "&cDeleted the crate &#FF5555%crate%&c."
