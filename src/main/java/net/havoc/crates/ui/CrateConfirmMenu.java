@@ -101,8 +101,8 @@ public class CrateConfirmMenu extends Menu {
 
         if (config().getBoolean("CONFIRM-MENU.FILLER.ENABLED", true)) {
             ItemStack filler = ItemBuilder
-                    .of(config().getString("CONFIRM-MENU.FILLER.MATERIAL", "GRAY_STAINED_GLASS_PANE"),
-                            Material.GRAY_STAINED_GLASS_PANE)
+                    .of(config().getString("CONFIRM-MENU.FILLER.MATERIAL", "BLACK_STAINED_GLASS_PANE"),
+                            Material.BLACK_STAINED_GLASS_PANE)
                     .name(config().getString("CONFIRM-MENU.FILLER.NAME", " "))
                     .build();
             for (int slot = 0; slot < size; slot++) {
@@ -110,18 +110,42 @@ public class CrateConfirmMenu extends Menu {
             }
         }
 
-        buttons.put(config().getInt("CONFIRM-MENU.ITEM-SLOT", 13), new RewardDisplayButton());
+        // A framed border keeps the buttons off the edges instead of everything sitting shoulder
+        // to shoulder in one row.
+        if (config().getBoolean("CONFIRM-MENU.BORDER.ENABLED", true) && size >= 27) {
+            ItemStack border = ItemBuilder
+                    .of(config().getString("CONFIRM-MENU.BORDER.MATERIAL", "GRAY_STAINED_GLASS_PANE"),
+                            Material.GRAY_STAINED_GLASS_PANE)
+                    .name(config().getString("CONFIRM-MENU.BORDER.NAME", " "))
+                    .build();
+            int rows = size / 9;
+            for (int slot = 0; slot < size; slot++) {
+                int row = slot / 9;
+                int column = slot % 9;
+                if (row == 0 || row == rows - 1 || column == 0 || column == 8) {
+                    buttons.put(slot, new StaticButton(border));
+                }
+            }
+        }
+
+        buttons.put(config().getInt("CONFIRM-MENU.ITEM-SLOT", 22), new RewardDisplayButton());
 
         // Quantity buttons, hidden for one-per-purchase items such as totems and shulker boxes.
         if (!this.rule.isHideButtons()) {
-            buttons.putAll(quantityButtons("ADD"));
-            buttons.putAll(quantityButtons("REMOVE"));
+            buttons.putAll(quantityButtons("ADD", player));
+            buttons.putAll(quantityButtons("REMOVE", player));
         }
 
-        buttons.put(config().getInt("CONFIRM-MENU.BUTTONS.CONFIRM.SLOT", 26), new ConfirmButton());
-        buttons.put(config().getInt("CONFIRM-MENU.BUTTONS.CANCEL.SLOT", 18), new CancelButton());
+        for (int slot : slotsOf("CONFIRM-MENU.BUTTONS.CONFIRM", Arrays.asList(41, 42, 43))) {
+            buttons.put(slot, new ConfirmButton());
+        }
+        for (int slot : slotsOf("CONFIRM-MENU.BUTTONS.CANCEL", Arrays.asList(37, 38, 39))) {
+            buttons.put(slot, new CancelButton());
+        }
         if (config().getBoolean("CONFIRM-MENU.BUTTONS.INFO.ENABLED", true)) {
-            buttons.put(config().getInt("CONFIRM-MENU.BUTTONS.INFO.SLOT", 22), new InfoButton());
+            for (int slot : slotsOf("CONFIRM-MENU.BUTTONS.INFO", Arrays.asList(13))) {
+                buttons.put(slot, new InfoButton());
+            }
         }
 
         buttons.keySet().removeIf(slot -> slot < 0 || slot >= size);
@@ -129,10 +153,24 @@ public class CrateConfirmMenu extends Menu {
     }
 
     /**
+     * A button may occupy one SLOT or a whole SLOTS row, so confirm/cancel can be wide blocks
+     * instead of single squeezed squares.
+     */
+    private List<Integer> slotsOf(String path, List<Integer> def) {
+        List<Integer> slots = config().getIntegerList(path + ".SLOTS");
+        if (slots != null && !slots.isEmpty()) {
+            return slots;
+        }
+        int single = config().getInt(path + ".SLOT", Integer.MIN_VALUE);
+        return single == Integer.MIN_VALUE ? def : Arrays.asList(single);
+    }
+
+    /**
      * Reads one QUANTITY_ADJUST group (ADD or REMOVE). Falls back to the older AMOUNTS layout.
      */
-    private Map<Integer, Button> quantityButtons(String group) {
+    private Map<Integer, Button> quantityButtons(String group, Player player) {
         Map<Integer, Button> buttons = new HashMap<>();
+        boolean hideUnusable = config().getBoolean("CONFIRM-MENU.HIDE-UNUSABLE-BUTTONS", true);
         boolean add = group.equals("ADD");
         ConfigurationSection section = config()
                 .getConfigurationSection("CONFIRM-MENU.QUANTITY_ADJUST." + group);
@@ -161,8 +199,11 @@ public class CrateConfirmMenu extends Menu {
                     lore = groupLore;
                 }
                 Mode mode = Mode.of(entry.getString("MODE"), key, add);
+                if (hideUnusable && !isUsable(mode, value, player)) {
+                    continue;
+                }
                 buttons.put(slot, new QuantityButton(mode, value, material, name, lore,
-                        add ? Material.LIME_CONCRETE : Material.RED_CONCRETE));
+                        add ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE));
             }
             return buttons;
         }
@@ -180,11 +221,59 @@ public class CrateConfirmMenu extends Menu {
         String name = config().getString(base + ".NAME", add ? "&a&l+%value%" : "&c&l-%value%");
         List<String> lore = config().getStringList(base + ".LORE");
         for (int index = 0; index < Math.min(values.size(), slots.size()); index++) {
-            buttons.put(slots.get(index), new QuantityButton(add ? Mode.ADD : Mode.SUBTRACT,
-                    values.get(index), material, name, lore,
+            Mode mode = add ? Mode.ADD : Mode.SUBTRACT;
+            if (hideUnusable && !isUsable(mode, values.get(index), player)) {
+                continue;
+            }
+            buttons.put(slots.get(index), new QuantityButton(mode, values.get(index), material, name, lore,
                     add ? Material.LIME_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE));
         }
         return buttons;
+    }
+
+    /**
+     * Works out where a button would leave the amount. A button that cannot move it is not drawn,
+     * so "Remove 64" only appears once you are actually above 64, and "Add 10" disappears when
+     * you are already at the limit.
+     */
+    private int resultOf(Mode mode, int value, Player player) {
+        int max = getMaxSelectable(player);
+        int min = this.rule.getMin();
+        switch (mode) {
+            case SET:
+                return Math.max(min, Math.min(max, value));
+            case MAX:
+                return max;
+            case MIN:
+                return min;
+            case SUBTRACT:
+                return Math.max(min, this.amount - value);
+            case ADD:
+            default:
+                return Math.min(max, this.amount + value);
+        }
+    }
+
+    private boolean isUsable(Mode mode, int value, Player player) {
+        int max = getMaxSelectable(player);
+        int min = this.rule.getMin();
+        int result = resultOf(mode, value, player);
+        switch (mode) {
+            case ADD:
+                // Every add button disappears once the amount is at the limit.
+                return this.amount < max;
+            case SUBTRACT:
+                // "Remove 64" only appears once you have actually gone up to 64.
+                return this.amount >= value && this.amount > min;
+            case SET:
+                return value <= max && result != this.amount;
+            case MAX:
+                return this.amount != max;
+            case MIN:
+                return this.amount != min;
+            default:
+                return result != this.amount;
+        }
     }
 
     private List<String> replaceLore(List<String> lore, Player player) {

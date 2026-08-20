@@ -1,25 +1,26 @@
 # HavocCrates
 
-Donut-style crates for Paper/Spigot **1.20+**. A crate block opens a reward menu; every reward
-costs virtual keys. The confirm menu lets you buy in bulk with a **1 / 10 / 64** selector, and
-unstackable rewards such as armour are handed over as individual pieces, so a bulk buy fills the
-inventory instead of stopping at one item.
+Donut-style crates for Paper/Spigot **1.20+**. A crate block opens a reward menu; every reward costs
+virtual keys. The confirm menu buys in bulk with `Add 1 / Add 10 / Set to 64`, and unstackable
+rewards such as armour are handed over as individual pieces so a bulk buy fills the inventory
+instead of stopping at one item.
+
+Reads the previous plugin's `crates.yml` as-is - no conversion needed.
 
 ## Features
 
 | Feature | Detail |
 | --- | --- |
-| Bulk buying | Green `+1 / +10 / +64` (3 slots) and red `-1 / -10 / -64` (3 slots) in the confirm menu |
-| Armour stacking | Unstackable rewards are split into separate items and pushed into the inventory. With `DROP-OVERFLOW: true` the excess drops at your feet; with `false` nothing drops - the inventory is filled with as many as fit and you are only charged for those |
-| Right click = stack | Right clicking a reward in the crate menu opens the confirm menu pre-loaded with a full stack, capped by the keys you own |
-| Live preview | The reward in the middle of the confirm menu renders with the amount you selected |
-| Amount cap | Never lets you select more than `MAX-AMOUNT` or more than your key balance |
-| Shift click | Shift click a green button to jump to the max, a red button to reset to 1 |
-| Storage | Flatfile by default, SQLite or MySQL optionally (falls back to flatfile if the driver is missing) |
-| PlaceholderAPI | `%havoccrates_keys_<crate>%`, `%havoccrates_keys_total%` |
-| Old crates.yml | Reads the previous plugin's file as-is: crates at the top level with TITLE / ROWS / LOCATIONS / COMMANDS / POSITIONS / REWARDS |
-| Same alignment | Each crate uses its own ROWS and centers its rewards exactly like before (7 -> slots 10-16, 6 -> 10-15, 5 -> 11-15, 2 -> 12-13); a POSITION >= 0 pins a reward to that slot |
+| Bulk buying | Green `Add 1 / Add 10 / Set to 64` and red `Remove 1 / 10 / 64`, fully configurable |
+| Self-tidying buttons | A quantity button is only drawn when it would change something, so "Remove 64" appears only once you have gone up to 64 |
+| Armour stacking | Unstackable rewards are split into separate items and pushed into the inventory |
+| Fills, never refuses | With `DROP-OVERFLOW: false` the inventory is filled with as many as fit and you are charged only for those; existing items are never replaced |
+| Right click = stack | Right clicking a reward opens the confirm menu pre-loaded with a full stack, capped by your keys and by `RESTRICTIONS` |
 | Per item limits | `RESTRICTIONS` caps quantities per material and can hide the quantity buttons entirely (totems, shulkers, potions, bows...) |
+| Old crates.yml | Crates at the top level with `TITLE` / `ROWS` / `LOCATIONS` / `COMMANDS` / `POSITIONS` / `REWARDS` |
+| Same alignment | Each crate uses its own `ROWS` and centers its rewards like before (7 -> slots 10-16, 6 -> 10-15, 5 -> 11-15, 2 -> 12-13) |
+| Storage | Flatfile by default, SQLite or MySQL optionally |
+| PlaceholderAPI | `%havoccrates_keys_<crate>%`, `%havoccrates_keys_total%` |
 
 ## Commands
 
@@ -27,17 +28,125 @@ inventory instead of stopping at one item.
 | --- | --- | --- |
 | `/crates create <crate>` | `havoccrates.admin` | Create a crate |
 | `/crates delete <crate>` | `havoccrates.admin` | Delete a crate |
-| `/crates set <crate>` | `havoccrates.admin` | Bind the block you are looking at to a crate |
+| `/crates set <crate>` | `havoccrates.admin` | Bind the block you are looking at |
 | `/crates unset` | `havoccrates.admin` | Unbind the block you are looking at |
-| `/crates edit <crate>` | `havoccrates.admin` | Open the reward editor (drag items in, close to save) |
+| `/crates edit <crate>` | `havoccrates.admin` | Reward editor (drag items in, close to save) |
 | `/crates open <crate> [player]` | `havoccrates.admin` | Open a crate menu |
 | `/crates list` | `havoccrates.admin` | List crates |
 | `/crates reload` | `havoccrates.admin` | Reload config.yml and crates.yml |
-| `/key check [player]` | – | Show key balances |
+| `/key check [player]` | - | Show key balances |
 | `/key give <player> <crate> <amount>` | `havoccrates.admin` | Give keys |
 | `/key giveall <crate> <amount>` | `havoccrates.admin` | Give keys to everyone online |
 | `/key remove <player> <crate> <amount>` | `havoccrates.admin` | Remove keys |
 | `/key set <player> <crate> <amount>` | `havoccrates.admin` | Set a key balance |
+
+Aliases: `/crate`, `/hcrates`, `/havoccrates`, `/keys`, `/hkey`.
+
+## Confirm menu
+
+Six rows, framed, with the buttons spread out instead of packed into one line:
+
+```
+ B   B   B   B    B    B   B   B   B
+ B   .   .   .   keys  .   .   .   B
+ B  -64 -10  -1  ITEM  +1  +10 s64  B
+ B   .   .   .    .    .   .   .   B
+ B  [ C A N C E L ]  [ C O N F I R M ]  B
+ B   B   B   B    B    B   B   B   B
+```
+
+Confirm and cancel are three slots wide (`SLOTS: [41, 42, 43]` / `[37, 38, 39]`), the reward sits in
+the middle at 22 and the key counter above it at 13. `SIZE`, `ITEM-SLOT`, every `SLOT` / `SLOTS`,
+the `FILLER` background and the `BORDER` frame are configurable.
+
+### Buttons hide when they can't do anything
+
+With `HIDE-UNUSABLE-BUTTONS: true` (default) a quantity button is drawn only when it would change
+the amount:
+
+| Amount | Buttons shown |
+| --- | --- |
+| 1 | Add 1, Add 10, Set to 64 |
+| 11 | Remove 10, Remove 1, Add 1, Add 10, Set to 64 |
+| 64 | Remove 64, Remove 10, Remove 1 |
+
+Removes appear only once you have gone up that far, adds disappear at the limit, and an ender pearl
+capped at 16 never shows "Set to 64".
+
+### Quantity buttons
+
+```yaml
+QUANTITY_ADJUST:
+  ADD:
+    MATERIAL: "LIME_STAINED_GLASS_PANE"
+    ADD_1:   { SLOT: 23, NAME: "&#00FC00Add 1",     INCREMENT: 1 }
+    ADD_10:  { SLOT: 24, NAME: "&#00FC00Add 10",    INCREMENT: 10 }
+    SET_64:  { SLOT: 25, NAME: "&#00FC00Set to 64", INCREMENT: 64 }
+  REMOVE:
+    MATERIAL: "RED_STAINED_GLASS_PANE"
+    REMOVE_1:  { SLOT: 21, NAME: "&cRemove 1",  DECREMENT: 1 }
+    REMOVE_10: { SLOT: 20, NAME: "&cRemove 10", DECREMENT: 10 }
+    REMOVE_64: { SLOT: 19, NAME: "&cRemove 64", DECREMENT: 64 }
+```
+
+A button's behaviour comes from its name - `ADD_*` adds, `REMOVE_*` subtracts, `SET_*` sets the
+amount, `MAX_*` jumps to the highest allowed, `MIN_*` / `RESET_*` goes back to the minimum - or set
+`MODE: ADD / SUBTRACT / SET / MAX / MIN` explicitly. Add as many buttons as you like; each needs a
+`SLOT` and an `INCREMENT` / `DECREMENT`. Shift clicking an add button jumps to the max, shift
+clicking a remove button resets to the minimum.
+
+## Filling the inventory
+
+Buying 64 of an unstackable reward needs 64 free slots and a player only has 36, so the purchase is
+never refused outright:
+
+* `DROP-OVERFLOW: true` - all 64 are handed over, whatever does not fit drops at your feet.
+* `DROP-OVERFLOW: false` - the inventory is filled with as many as actually fit (36 in that
+  example), you are charged only for those, and the rest is not bought. Matching stacks are topped
+  up first, then empty slots are used, so nothing already in the inventory is replaced.
+  `INVENTORY_FULL` now only fires when there is genuinely no room at all.
+
+## Per item restrictions
+
+```yaml
+RESTRICTIONS:
+  TOTEM_OF_UNDYING: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  ENDER_PEARL:      { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
+  SHULKER_BOX:      { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
+  DEFAULT:          { MAX_QUANTITY: 64, MIN_QUANTITY: 1 }
+```
+
+A key matches the material exactly or as a suffix, so `SHULKER_BOX` also covers
+`WHITE_SHULKER_BOX`, and the most specific match wins (`SPLASH_POTION` beats `POTION`). When a
+reward is capped at one, the quantity buttons are not drawn and right clicking it opens at 1.
+
+## crates.yml
+
+The file from the old plugin is read as-is - crates sit at the top level:
+
+```yaml
+Common:
+  TITLE: '&8choose 1 item'
+  ROWS: 3
+  LOCATIONS:
+  - spawn,99,-21,70          # world,x,y,z  (world;x;y;z also works)
+  COMMANDS:
+    '11': 'voyager amethyst pickaxe {player} 7d'
+  POSITIONS:
+    '11': -1                 # -1 = auto centered, or a slot to pin it to
+  REWARDS:
+    '11':
+      ==: org.bukkit.inventory.ItemStack
+      ...
+```
+
+* `COMMANDS` may be keyed by reward key **or** by the slot the reward is drawn on - the old plugin
+  wrote both (Ruby stores rewards as 1-5 and commands as 11-15). Both are matched up on load.
+* `{player}`, `{crate}`, `{amount}` and the `%player%` style are all replaced.
+* A command containing `{amount}` runs **once** with the total; otherwise it runs **once per item
+  bought**. Empty command strings are ignored.
+* `/crates edit <crate>` rewrites the file in the same format, pinning each reward to the slot you
+  left it on. Nothing else ever writes to it - a hand edited file stays exactly as it is.
 
 ## Quick start
 
@@ -48,45 +157,21 @@ inventory instead of stopping at one item.
 /key give <you> summer 640
 ```
 
-Right click the block, right click a reward, tune the amount with the green/red buttons, confirm.
-
-## Confirm menu layout (defaults)
-
-```
- slot  9 10 11        13        15 16 17
-       -64 -10 -1    reward    +1 +10 +64      (row 2)
- slot 18 .......... 22 .......... 26
-      CANCEL       your keys      CONFIRM      (row 3)
-```
-
-Every material, name, lore, slot and value is configurable in `config.yml` under `CONFIRM-MENU`.
-`AMOUNTS.ADD.VALUES` / `AMOUNTS.REMOVE.VALUES` line up index-by-index with their `SLOTS` lists,
-so you can change `1, 10, 64` to anything (e.g. `1, 16, 32`) or add a fourth button.
-
-## Reward commands
-
-A reward slot can also fire console commands (`crates.yml` → `ITEMS.<slot>.COMMANDS`):
-
-* `%player%`, `%crate%` and `%amount%` are replaced.
-* If the command contains `%amount%` it runs **once** with the total; otherwise it runs **once per
-  item bought**.
-
 ## Building
 
 ```
 mvn clean package
 ```
 
-Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin has to target
-21 as well (that is also the Java version Minecraft 1.20.6+ servers run on).
+Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin targets 21 as
+well (that is also the Java version Minecraft 1.20.6+ servers run on).
 
-Output: `target/HavocCrates-3.2.jar`. The included GitHub Actions workflow
-(`.github/workflows/build.yml`) builds on every push, uploads the jar as an artifact, and attaches
-it to a release when you push a `v*` tag.
+Output: `target/HavocCrates-3.3.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
+builds on every push, uploads the jar as an artifact, and attaches it to a release on a `v*` tag.
 
 ### Building for a Java 17 server
 
-If your server still runs Java 17, change two lines in `pom.xml` and the plugin builds for 17:
+Change two lines in `pom.xml`:
 
 ```xml
 <maven.compiler.release>17</maven.compiler.release>
