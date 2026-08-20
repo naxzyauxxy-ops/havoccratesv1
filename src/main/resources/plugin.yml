@@ -1,0 +1,24 @@
+name: HavocCrates
+main: net.havoc.crates.CratesPlugin
+version: ${project.version}
+api-version: '1.20'
+author: Havoc
+description: Donut style crates with bulk buying, stackable armour rewards and a 1/10/64 amount selector.
+softdepend:
+  - PlaceholderAPI
+
+commands:
+  crates:
+    description: Manage crates.
+    usage: /crates
+    aliases: [crate, hcrates, havoccrates]
+    permission: havoccrates.admin
+  key:
+    description: Manage crate keys.
+    usage: /key
+    aliases: [keys, hkey]
+
+permissions:
+  havoccrates.admin:
+    description: Full access to crate administration.
+    default: op

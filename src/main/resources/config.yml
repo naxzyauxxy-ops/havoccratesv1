@@ -1,0 +1,111 @@
+# ==========================================================
+#  HavocCrates
+#  - Left click a reward  -> buy 1
+#  - Right click a reward -> buy a full stack (capped by your keys)
+#  - Green  +1 / +10 / +64  (3 slots)
+#  - Red    -1 / -10 / -64  (3 slots)
+#  Unstackable rewards (armour, tools) are given as separate
+#  items, so buying 64 chestplates fills your inventory.
+# ==========================================================
+
+DATABASE:
+  # FLATFILE, SQLITE or MYSQL. Falls back to FLATFILE if the driver is missing.
+  TYPE: "FLATFILE"
+  MYSQL:
+    HOST: "localhost"
+    DATABASE: "havoc_crates"
+    USER: "root"
+    PASSWORD: "password"
+
+CRATE-VIEW-MENU:
+  TITLE: "%crate%"
+  PLACEHOLDER: true
+  PLACEHOLDER-MATERIAL: "GRAY_STAINED_GLASS_PANE"
+  ITEM-LORE:
+    - ""
+    - "&7Your keys: &f%keys%"
+    - "&a▶ Left click &7to buy &f1"
+    - "&a▶ Right click &7to buy &f%stack%"
+
+CONFIRM-MENU:
+  TITLE: "&8ᴄᴏɴꜰɪʀᴍ"
+  SIZE: 27
+  # Where the reward preview sits. Its stack size follows the amount you picked.
+  ITEM-SLOT: 13
+  # Highest amount that can be selected at once.
+  MAX-AMOUNT: 64
+  # true  -> anything that does not fit is dropped at your feet
+  # false -> the purchase is refused with the INVENTORY_FULL message
+  DROP-OVERFLOW: true
+  SOUND: "entity.player.levelup"
+  ITEM-LORE:
+    - ""
+    - "&7Amount: &f%amount%"
+    - "&7Cost: &f%cost% &7key(s)"
+    - "&7Your keys: &f%keys%"
+  FILLER:
+    ENABLED: true
+    MATERIAL: "GRAY_STAINED_GLASS_PANE"
+    NAME: " "
+  AMOUNTS:
+    ADD:
+      MATERIAL: "LIME_STAINED_GLASS_PANE"
+      NAME: "&a&l+%value%"
+      VALUES: [1, 10, 64]
+      SLOTS: [15, 16, 17]
+      LORE:
+        - "&7Selected: &f%amount%&7/&f%max%"
+        - "&a▶ Shift click &7for the max"
+    REMOVE:
+      MATERIAL: "RED_STAINED_GLASS_PANE"
+      NAME: "&c&l-%value%"
+      # VALUES and SLOTS line up: -1 sits closest to the item.
+      VALUES: [1, 10, 64]
+      SLOTS: [11, 10, 9]
+      LORE:
+        - "&7Selected: &f%amount%&7/&f%max%"
+        - "&c▶ Shift click &7to reset to &f1"
+  BUTTONS:
+    CONFIRM:
+      MATERIAL: "LIME_CONCRETE"
+      NAME: "&#00FC00ᴄᴏɴꜰɪʀᴍ"
+      SLOT: 26
+      LORE:
+        - "&7Buy &f%amount%&7 for &f%cost% &7key(s)."
+    CANCEL:
+      MATERIAL: "RED_CONCRETE"
+      NAME: "&#FC0000ᴄᴀɴᴄᴇʟ"
+      SLOT: 18
+      LORE:
+        - "&7Back to the crate."
+    INFO:
+      ENABLED: true
+      MATERIAL: "TRIPWIRE_HOOK"
+      NAME: "&eYour keys: &f%keys%"
+      SLOT: 22
+      LORE:
+        - "&7Each item costs &f1 &7key."
+
+MESSAGES:
+  NO_PERMISSION: "&cYou don't have permission to do that."
+  PLAYERS_ONLY: "&cOnly players can use this."
+  PLAYER_NOT_FOUND: "&cPlayer '&f%player%&c' is not online."
+  NOT_ENOUGH_KEYS: "&cYou don't have enough keys. (&f%amount% &cneeded)"
+  INVENTORY_FULL: "&cYour inventory is full!"
+  REWARD_RECEIVED: "&7You bought &#6BF18D%amount%x %item% &7from &#6BF18D%crate%&7."
+  NO_CRATE_FOUND: "&cCrate '&f%crate%&c' does not exist."
+  CRATE_CREATED: "&7Successfully created the crate &7(&#6BF18D%crate%&7)"
+  CRATE_DELETED: "&7Deleted the crate &#6BF18D%crate%&7."
+  CRATE_SAVED: "&7Saved the rewards of &#6BF18D%crate%&7."
+  NO_TARGET_BLOCK: "&cYou need to look at a block."
+  RECEIVED_KEYS: "&7You have received &#6BF18D%amount% &7key(s) for the crate &#6BF18D%crate%&7."
+  GIVEN_KEYS: "&#6BF18D%amount%&7 key(s) for the crate &#6BF18D%crate%&7 have been given to &#6BF18D%player%&7."
+  KEYALL_GIVEN: "&#6BF18D%amount%&7 key(s) for the crate &#6BF18D%crate%&7 have been given to all online players."
+  KEYS_REMOVED_ADMIN: "&7You have removed &#6BF18D%amount%&7 key(s) for the crate &#6BF18D%crate%&7 from &#6BF18D%player%&7."
+  KEYS_SET: "&7Set the &#6BF18D%crate%&7 keys of &#6BF18D%player%&7 to &#6BF18D%amount%&7."
+  CRATE_ALREADY_EXISTS: "&cCrate '%crate%' already exists."
+  CRATE_SET: "&7You have set this block as the crate &#6BF18D%crate%&7."
+  CRATE_UNSET: "&7This block is no longer the crate &#6BF18D%crate%&7."
+  CRATE_PROTECTED: "&cThis block belongs to the crate %crate%."
+  NO_CRATES_FOUND: "&cNo crates found."
+  CONFIG_RELOADED: "&aCrates configuration reloaded successfully."

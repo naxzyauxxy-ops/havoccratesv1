@@ -1,0 +1,18 @@
+# Crates are written here automatically by /crates create, /crates set and /crates edit.
+#
+# CRATES:
+#   example:
+#     DISPLAY-NAME: "&bExample Crate"
+#     LOCATIONS:
+#       - "world;100;64;100"
+#     ITEMS:
+#       '0':
+#         ITEM:
+#           ==: org.bukkit.inventory.ItemStack
+#           v: 3953
+#           type: DIAMOND_CHESTPLATE
+#         # Optional. %player%, %crate% and %amount% are replaced.
+#         # If a command contains %amount% it runs once, otherwise it runs once per item bought.
+#         COMMANDS:
+#           - "broadcast %player% bought %amount%x from %crate%"
+CRATES: {}
