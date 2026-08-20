@@ -1,18 +1,19 @@
-# Crates are written here automatically by /crates create, /crates set and /crates edit.
+# Crates live at the top level of this file, exactly like the old plugin wrote them:
 #
-# CRATES:
-#   example:
-#     DISPLAY-NAME: "&bExample Crate"
-#     LOCATIONS:
-#       - "world;100;64;100"
-#     ITEMS:
-#       '0':
-#         ITEM:
-#           ==: org.bukkit.inventory.ItemStack
-#           v: 3953
-#           type: DIAMOND_CHESTPLATE
-#         # Optional. %player%, %crate% and %amount% are replaced.
-#         # If a command contains %amount% it runs once, otherwise it runs once per item bought.
-#         COMMANDS:
-#           - "broadcast %player% bought %amount%x from %crate%"
-CRATES: {}
+# Common:
+#   TITLE: '&8ᴄʜᴏᴏsᴇ 1 ɪᴛᴇᴍ'
+#   ROWS: 3
+#   LOCATIONS:
+#   - world,99,-21,70          # world,x,y,z  (world;x;y;z also works)
+#   COMMANDS:
+#     '10': 'voyager amethyst pickaxe {player} 7d'   # {player} {crate} {amount} are replaced.
+#     '11': ''                                       # A command with {amount} runs once with the
+#                                                    # total, otherwise it runs once per item.
+#   POSITIONS:
+#     '10': -1                 # -1 = auto centered, or a slot number to pin it
+#   REWARDS:
+#     '10':
+#       ==: org.bukkit.inventory.ItemStack
+#       ...
+#
+# /crates edit <crate> writes this file for you.

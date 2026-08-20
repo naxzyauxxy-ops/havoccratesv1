@@ -62,10 +62,9 @@ public class CratesPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        // Crates are only ever written by an admin action, so nothing is saved here -
+        // that keeps a hand edited crates.yml exactly as it is.
         Bukkit.getOnlinePlayers().forEach(player -> player.closeInventory());
-        if (this.crateManager != null) {
-            this.crateManager.save();
-        }
         if (this.profileManager != null) {
             this.profileManager.shutdown();
         }

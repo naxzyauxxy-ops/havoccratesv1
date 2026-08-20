@@ -17,6 +17,9 @@ inventory instead of stopping at one item.
 | Shift click | Shift click a green button to jump to the max, a red button to reset to 1 |
 | Storage | Flatfile by default, SQLite or MySQL optionally (falls back to flatfile if the driver is missing) |
 | PlaceholderAPI | `%havoccrates_keys_<crate>%`, `%havoccrates_keys_total%` |
+| Old crates.yml | Reads the previous plugin's file as-is: crates at the top level with TITLE / ROWS / LOCATIONS / COMMANDS / POSITIONS / REWARDS |
+| Same alignment | Each crate uses its own ROWS and centers its rewards exactly like before (7 -> slots 10-16, 6 -> 10-15, 5 -> 11-15, 2 -> 12-13); a POSITION >= 0 pins a reward to that slot |
+| Per item limits | `RESTRICTIONS` caps quantities per material and can hide the quantity buttons entirely (totems, shulkers, potions, bows...) |
 
 ## Commands
 
@@ -77,7 +80,7 @@ mvn clean package
 Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin has to target
 21 as well (that is also the Java version Minecraft 1.20.6+ servers run on).
 
-Output: `target/HavocCrates-3.0.jar`. The included GitHub Actions workflow
+Output: `target/HavocCrates-3.1.jar`. The included GitHub Actions workflow
 (`.github/workflows/build.yml`) builds on every push, uploads the jar as an artifact, and attaches
 it to a release when you push a `v*` tag.
 

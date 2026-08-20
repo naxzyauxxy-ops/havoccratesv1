@@ -1,11 +1,16 @@
 # ==========================================================
 #  HavocCrates
-#  - Left click a reward  -> buy 1
-#  - Right click a reward -> buy a full stack (capped by your keys)
-#  - Green  +1 / +10 / +64  (3 slots)
-#  - Red    -1 / -10 / -64  (3 slots)
-#  Unstackable rewards (armour, tools) are given as separate
-#  items, so buying 64 chestplates fills your inventory.
+#
+#  Crate menus keep the alignment from crates.yml: each crate
+#  uses its own TITLE and ROWS, rewards with a POSITION land
+#  on that slot and the rest are centered (7 rewards -> 10-16
+#  of a 3 row menu, 5 -> 11-15, 2 -> 12-13).
+#
+#  Left click a reward  -> buy 1
+#  Right click a reward -> buy a full stack (capped by your
+#                          keys and by RESTRICTIONS)
+#  Unstackable rewards (armour, tools) are handed over as
+#  separate items, so a bulk buy fills your inventory.
 # ==========================================================
 
 DATABASE:
@@ -18,21 +23,24 @@ DATABASE:
     PASSWORD: "password"
 
 CRATE-VIEW-MENU:
+  # Only used when a crate has no TITLE of its own.
   TITLE: "%crate%"
   PLACEHOLDER: true
   PLACEHOLDER-MATERIAL: "GRAY_STAINED_GLASS_PANE"
+  PLACEHOLDER-NAME: " "
+  # Appended under each reward. Lines containing %stack% are hidden for single purchase items.
   ITEM-LORE:
     - ""
     - "&7Your keys: &f%keys%"
-    - "&a▶ Left click &7to buy &f1"
-    - "&a▶ Right click &7to buy &f%stack%"
+    - "&#00FC00▶ Left click &7to buy &f1"
+    - "&#00FC00▶ Right click &7to buy &f%stack%"
 
 CONFIRM-MENU:
   TITLE: "&8ᴄᴏɴꜰɪʀᴍ"
   SIZE: 27
   # Where the reward preview sits. Its stack size follows the amount you picked.
   ITEM-SLOT: 13
-  # Highest amount that can be selected at once.
+  # Hard ceiling for every purchase, before RESTRICTIONS are applied.
   MAX-AMOUNT: 64
   # true  -> anything that does not fit is dropped at your feet
   # false -> the purchase is refused with the INVENTORY_FULL message
@@ -47,33 +55,53 @@ CONFIRM-MENU:
     ENABLED: true
     MATERIAL: "GRAY_STAINED_GLASS_PANE"
     NAME: " "
-  AMOUNTS:
+
+  # Quantity buttons. A button's behaviour comes from its name:
+  #   ADD_*    -> adds INCREMENT        SET_*   -> sets the amount
+  #   REMOVE_* -> takes away DECREMENT  MAX_*   -> jumps to the highest allowed
+  #   MIN_* / RESET_* -> back to the minimum
+  # or set MODE: ADD / SUBTRACT / SET / MAX / MIN explicitly.
+  # Shift clicking an add button jumps to the max, shift clicking a remove button resets to the min.
+  QUANTITY_ADJUST:
     ADD:
-      MATERIAL: "LIME_STAINED_GLASS_PANE"
-      NAME: "&a&l+%value%"
-      VALUES: [1, 10, 64]
-      SLOTS: [15, 16, 17]
-      LORE:
-        - "&7Selected: &f%amount%&7/&f%max%"
-        - "&a▶ Shift click &7for the max"
+      MATERIAL: "LIME_CONCRETE"
+      ADD_1:
+        SLOT: 15
+        NAME: "&#00FC00Add 1"
+        INCREMENT: 1
+      ADD_10:
+        SLOT: 16
+        NAME: "&#00FC00Add 10"
+        INCREMENT: 10
+      SET_64:
+        SLOT: 17
+        NAME: "&#00FC00Set to 64"
+        INCREMENT: 64
+
     REMOVE:
-      MATERIAL: "RED_STAINED_GLASS_PANE"
-      NAME: "&c&l-%value%"
-      # VALUES and SLOTS line up: -1 sits closest to the item.
-      VALUES: [1, 10, 64]
-      SLOTS: [11, 10, 9]
-      LORE:
-        - "&7Selected: &f%amount%&7/&f%max%"
-        - "&c▶ Shift click &7to reset to &f1"
+      MATERIAL: "RED_CONCRETE"
+      REMOVE_1:
+        SLOT: 11
+        NAME: "&cRemove 1"
+        DECREMENT: 1
+      REMOVE_10:
+        SLOT: 10
+        NAME: "&cRemove 10"
+        DECREMENT: 10
+      REMOVE_64:
+        SLOT: 9
+        NAME: "&cRemove 64"
+        DECREMENT: 64
+
   BUTTONS:
     CONFIRM:
-      MATERIAL: "LIME_CONCRETE"
+      MATERIAL: "LIME_STAINED_GLASS_PANE"
       NAME: "&#00FC00ᴄᴏɴꜰɪʀᴍ"
       SLOT: 26
       LORE:
         - "&7Buy &f%amount%&7 for &f%cost% &7key(s)."
     CANCEL:
-      MATERIAL: "RED_CONCRETE"
+      MATERIAL: "RED_STAINED_GLASS_PANE"
       NAME: "&#FC0000ᴄᴀɴᴄᴇʟ"
       SLOT: 18
       LORE:
@@ -85,6 +113,71 @@ CONFIRM-MENU:
       SLOT: 22
       LORE:
         - "&7Each item costs &f1 &7key."
+
+# Per material purchase limits. A key matches the material exactly or as a suffix, so
+# SHULKER_BOX also covers PINK_SHULKER_BOX. The most specific match wins, DEFAULT is the fallback.
+# HIDE_QUANTITY_BUTTONS removes the green/red buttons entirely for that item.
+RESTRICTIONS:
+  TOTEM_OF_UNDYING:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  ENDER_PEARL:
+    MAX_QUANTITY: 16
+    MIN_QUANTITY: 1
+  SHIELD:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  BOW:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  CROSSBOW:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  TRIDENT:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  SHULKER_BOX:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  SPLASH_POTION:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  POTION:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  ENCHANTED_BOOK:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  MUSHROOM_STEW:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  RABBIT_STEW:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  HONEY_BOTTLE:
+    MAX_QUANTITY: 16
+    MIN_QUANTITY: 1
+  FLINT_AND_STEEL:
+    MAX_QUANTITY: 1
+    MIN_QUANTITY: 1
+    HIDE_QUANTITY_BUTTONS: true
+  SPAWNER:
+    MAX_QUANTITY: 64
+    MIN_QUANTITY: 1
+  DEFAULT:
+    MAX_QUANTITY: 64
+    MIN_QUANTITY: 1
 
 MESSAGES:
   NO_PERMISSION: "&cYou don't have permission to do that."
