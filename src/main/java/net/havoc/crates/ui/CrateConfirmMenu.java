@@ -207,40 +207,58 @@ public class CrateConfirmMenu extends Menu {
 
     private void purchase(Player player) {
         Profile profile = this.plugin.getProfileManager().getProfile(player);
-        int cost = this.amount;
-        if (profile.getKeyAmount(this.crate.getKey()) < cost) {
+        int keys = profile.getKeyAmount(this.crate.getKey());
+        if (keys < 1) {
             this.plugin.message(player, "NOT_ENOUGH_KEYS",
-                    "%crate%", this.crate.getName(), "%amount%", String.valueOf(cost));
+                    "%crate%", this.crate.getName(), "%amount%", String.valueOf(this.amount));
             player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
             return;
         }
 
-        List<ItemStack> stacks = InventoryUtil.split(this.reward, this.amount);
+        int requested = Math.min(this.amount, keys);
         boolean dropOverflow = config().getBoolean("CONFIRM-MENU.DROP-OVERFLOW", true);
-        if (!dropOverflow && !InventoryUtil.fits(player, stacks)) {
-            this.plugin.message(player, "INVENTORY_FULL");
-            player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
-            return;
+        int delivered = requested;
+
+        if (!dropOverflow) {
+            // Fill whatever room there is instead of refusing the whole purchase. 64 chestplates
+            // need 64 free slots and nobody has that, so buy as many as actually fit.
+            int room = InventoryUtil.fitCount(player, this.reward, requested);
+            if (room <= 0) {
+                this.plugin.message(player, "INVENTORY_FULL");
+                player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+                return;
+            }
+            delivered = Math.min(requested, room);
         }
 
-        if (!profile.takeKeys(this.crate.getKey(), cost)) {
+        if (!profile.takeKeys(this.crate.getKey(), delivered)) {
             this.plugin.message(player, "NOT_ENOUGH_KEYS",
-                    "%crate%", this.crate.getName(), "%amount%", String.valueOf(cost));
+                    "%crate%", this.crate.getName(), "%amount%", String.valueOf(delivered));
             return;
         }
         this.plugin.getProfileManager().saveAsync(profile);
 
+        // addItem only tops up matching stacks and uses empty slots, so nothing already in the
+        // inventory is ever overwritten.
+        List<ItemStack> stacks = InventoryUtil.split(this.reward, delivered);
         List<ItemStack> leftovers = InventoryUtil.give(player, stacks, dropOverflow);
         for (ItemStack leftover : leftovers) {
             player.getWorld().dropItemNaturally(player.getLocation(), leftover);
         }
 
-        runCommands(player);
+        int purchased = delivered;
+        runCommands(player, purchased);
 
         this.plugin.message(player, "REWARD_RECEIVED",
-                "%amount%", String.valueOf(this.amount),
+                "%amount%", String.valueOf(purchased),
                 "%crate%", this.crate.getName(),
                 "%item%", itemName());
+        if (purchased < requested) {
+            this.plugin.message(player, "INVENTORY_PARTIAL",
+                    "%amount%", String.valueOf(purchased),
+                    "%left%", String.valueOf(requested - purchased),
+                    "%item%", itemName());
+        }
         player.playSound(player.getLocation(),
                 config().getString("CONFIRM-MENU.SOUND", "entity.player.levelup"), 1.0f, 1.0f);
 
@@ -255,7 +273,7 @@ public class CrateConfirmMenu extends Menu {
     /**
      * Runs the reward's commands. Supports both {player} and %player% style placeholders.
      */
-    private void runCommands(Player player) {
+    private void runCommands(Player player, int purchased) {
         List<String> commands = this.crate.getCommands(this.rewardKey);
         if (commands.isEmpty()) {
             return;
@@ -270,10 +288,10 @@ public class CrateConfirmMenu extends Menu {
             boolean bulkAware = raw.contains("{amount}") || raw.contains("%amount%");
             if (bulkAware) {
                 Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command
-                        .replace("{amount}", String.valueOf(this.amount))
-                        .replace("%amount%", String.valueOf(this.amount)));
+                        .replace("{amount}", String.valueOf(purchased))
+                        .replace("%amount%", String.valueOf(purchased)));
             } else {
-                for (int index = 0; index < this.amount; index++) {
+                for (int index = 0; index < purchased; index++) {
                     Bukkit.dispatchCommand(Bukkit.getConsoleSender(), command);
                 }
             }

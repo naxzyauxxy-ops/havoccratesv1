@@ -59,15 +59,54 @@ public final class InventoryUtil {
     }
 
     /**
-     * Tests whether every stack fits, without touching the real inventory.
+     * A throwaway copy of the player's storage slots, so delivery can be tested without touching
+     * the real inventory.
      */
-    public static boolean fits(Player player, Collection<ItemStack> stacks) {
+    private static Inventory snapshot(Player player) {
         Inventory dummy = Bukkit.createInventory(null, 36);
         ItemStack[] storage = player.getInventory().getStorageContents();
         for (int slot = 0; slot < Math.min(36, storage.length); slot++) {
             ItemStack content = storage[slot];
             dummy.setItem(slot, content == null ? null : content.clone());
         }
+        return dummy;
+    }
+
+    /**
+     * How many copies of {@code base} actually fit right now.
+     *
+     * <p>This is what makes a bulk buy fill the inventory instead of being refused: 64 chestplates
+     * need 64 free slots and a player only has 36, so this returns what genuinely fits (topping up
+     * matching stacks first, then using empty slots) and never counts a slot that already holds
+     * something else.
+     *
+     * @return the number of items that can be delivered, 0 when there is no room at all.
+     */
+    public static int fitCount(Player player, ItemStack base, int amount) {
+        if (base == null || amount <= 0) {
+            return 0;
+        }
+        Inventory dummy = snapshot(player);
+        int placed = 0;
+        for (ItemStack stack : split(base, amount)) {
+            Map<Integer, ItemStack> leftover = dummy.addItem(stack.clone());
+            int notPlaced = 0;
+            for (ItemStack remaining : leftover.values()) {
+                notPlaced += remaining.getAmount();
+            }
+            placed += stack.getAmount() - notPlaced;
+            if (notPlaced > 0) {
+                break;
+            }
+        }
+        return Math.max(0, Math.min(amount, placed));
+    }
+
+    /**
+     * Tests whether every stack fits, without touching the real inventory.
+     */
+    public static boolean fits(Player player, Collection<ItemStack> stacks) {
+        Inventory dummy = snapshot(player);
         for (ItemStack stack : stacks) {
             Map<Integer, ItemStack> leftover = dummy.addItem(stack.clone());
             if (!leftover.isEmpty()) {

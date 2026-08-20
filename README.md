@@ -10,7 +10,7 @@ inventory instead of stopping at one item.
 | Feature | Detail |
 | --- | --- |
 | Bulk buying | Green `+1 / +10 / +64` (3 slots) and red `-1 / -10 / -64` (3 slots) in the confirm menu |
-| Armour stacking | Unstackable rewards are split into separate items and pushed into the inventory; overflow drops at your feet (configurable) |
+| Armour stacking | Unstackable rewards are split into separate items and pushed into the inventory. With `DROP-OVERFLOW: true` the excess drops at your feet; with `false` nothing drops - the inventory is filled with as many as fit and you are only charged for those |
 | Right click = stack | Right clicking a reward in the crate menu opens the confirm menu pre-loaded with a full stack, capped by the keys you own |
 | Live preview | The reward in the middle of the confirm menu renders with the amount you selected |
 | Amount cap | Never lets you select more than `MAX-AMOUNT` or more than your key balance |
@@ -80,7 +80,7 @@ mvn clean package
 Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin has to target
 21 as well (that is also the Java version Minecraft 1.20.6+ servers run on).
 
-Output: `target/HavocCrates-3.1.jar`. The included GitHub Actions workflow
+Output: `target/HavocCrates-3.2.jar`. The included GitHub Actions workflow
 (`.github/workflows/build.yml`) builds on every push, uploads the jar as an artifact, and attaches
 it to a release when you push a `v*` tag.
 

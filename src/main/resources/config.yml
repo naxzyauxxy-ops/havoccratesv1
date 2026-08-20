@@ -43,7 +43,8 @@ CONFIRM-MENU:
   # Hard ceiling for every purchase, before RESTRICTIONS are applied.
   MAX-AMOUNT: 64
   # true  -> anything that does not fit is dropped at your feet
-  # false -> the purchase is refused with the INVENTORY_FULL message
+  # false -> nothing is dropped: the inventory is filled with as many as fit and you are only
+  #          charged for those (existing items are never replaced)
   DROP-OVERFLOW: true
   SOUND: "entity.player.levelup"
   ITEM-LORE:
@@ -64,7 +65,7 @@ CONFIRM-MENU:
   # Shift clicking an add button jumps to the max, shift clicking a remove button resets to the min.
   QUANTITY_ADJUST:
     ADD:
-      MATERIAL: "LIME_CONCRETE"
+      MATERIAL: "LIME_STAINED_GLASS_PANE"
       ADD_1:
         SLOT: 15
         NAME: "&#00FC00Add 1"
@@ -79,7 +80,7 @@ CONFIRM-MENU:
         INCREMENT: 64
 
     REMOVE:
-      MATERIAL: "RED_CONCRETE"
+      MATERIAL: "RED_STAINED_GLASS_PANE"
       REMOVE_1:
         SLOT: 11
         NAME: "&cRemove 1"
@@ -185,6 +186,7 @@ MESSAGES:
   PLAYER_NOT_FOUND: "&cPlayer '&f%player%&c' is not online."
   NOT_ENOUGH_KEYS: "&cYou don't have enough keys. (&f%amount% &cneeded)"
   INVENTORY_FULL: "&cYour inventory is full!"
+  INVENTORY_PARTIAL: "&7Only &#6BF18D%amount% &7fit in your inventory - you were not charged for the other &#6BF18D%left%&7."
   REWARD_RECEIVED: "&7You bought &#6BF18D%amount%x %item% &7from &#6BF18D%crate%&7."
   NO_CRATE_FOUND: "&cCrate '&f%crate%&c' does not exist."
   CRATE_CREATED: "&7Successfully created the crate &7(&#6BF18D%crate%&7)"
