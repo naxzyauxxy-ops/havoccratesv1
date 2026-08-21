@@ -1,5 +1,6 @@
 package net.havoc.crates;
 
+import net.havoc.crates.commands.CrateCommand;
 import net.havoc.crates.commands.CratesCommand;
 import net.havoc.crates.commands.KeyCommand;
 import net.havoc.crates.crate.CrateManager;
@@ -47,6 +48,7 @@ public class CratesPlugin extends JavaPlugin {
         Bukkit.getPluginManager().registerEvents(new CrateEditListener(this), this);
 
         register("crates", new CratesCommand(this));
+        register("crate", new CrateCommand(this));
         register("key", new KeyCommand(this));
 
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {

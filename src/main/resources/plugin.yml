@@ -11,8 +11,13 @@ commands:
   crates:
     description: Manage crates.
     usage: /crates
-    aliases: [crate, hcrates, havoccrates]
+    aliases: [hcrates, havoccrates, cratesadmin]
     permission: havoccrates.admin
+  crate:
+    description: Open a crate menu from anywhere.
+    usage: /crate [crate]
+    aliases: [opencrate, crateopen]
+    permission: havoccrates.crate
   key:
     description: Manage crate keys.
     usage: /key
@@ -22,3 +27,6 @@ permissions:
   havoccrates.admin:
     description: Full access to crate administration.
     default: op
+  havoccrates.crate:
+    description: Use /crate to open a crate menu from anywhere.
+    default: true

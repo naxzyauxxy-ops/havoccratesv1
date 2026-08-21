@@ -36,6 +36,17 @@ CRATE-VIEW-MENU:
     - ""
     - "&7Your keys: &c%keys%"
 
+# /crate [crate] opens a crate menu from anywhere in the world.
+#   /crate                -> lists the crates and your key count for each
+#   /crate Rare           -> opens the Rare crate
+#   /crate Rare <player>  -> opens it for someone else (needs havoccrates.admin)
+CRATE-COMMAND:
+  SOUND: "block.chest.open"
+  # true -> a player also needs havoccrates.crate.<crate> for that specific crate
+  PER-CRATE-PERMISSION: false
+  # true -> the menu only opens when the player holds at least one key for that crate
+  REQUIRE-KEYS: false
+
 CONFIRM-MENU:
   TITLE: "&8ᴄᴏɴꜰɪʀᴍ ʏᴏᴜʀ ᴘᴜʀᴄʜᴀꜱᴇ"
   # 54 = six rows. The layout below is built for it:
@@ -262,4 +273,7 @@ MESSAGES:
   CRATE_UNSET: "&cThis block is no longer the crate &#FF5555%crate%&c."
   CRATE_PROTECTED: "&cThis block belongs to the crate &#FF5555%crate%&c."
   NO_CRATES_FOUND: "&cNo crates found."
+  CRATE_OPENED_FOR: "&cOpened &#FF5555%crate%&c for &#FF5555%player%&c."
+  CRATE_LIST_HEADER: "&cCrates &8(&#FF5555%amount%&8)"
+  CRATE_LIST_ENTRY: "&8 ▪ &#FF5555%crate% &7keys&8: &c%keys% &8- &7/%label% %crate%"
   CONFIG_RELOADED: "&cCrates configuration reloaded."

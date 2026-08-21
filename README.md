@@ -26,6 +26,9 @@ Reads the previous plugin's `crates.yml` as-is - no conversion needed.
 
 | Command | Permission | Description |
 | --- | --- | --- |
+| `/crate` | `havoccrates.crate` (default: everyone) | List the crates and your keys for each |
+| `/crate <crate>` | `havoccrates.crate` | Open that crate's menu from anywhere in the world |
+| `/crate <crate> <player>` | `havoccrates.admin` | Open it for someone else |
 | `/crates create <crate>` | `havoccrates.admin` | Create a crate |
 | `/crates delete <crate>` | `havoccrates.admin` | Delete a crate |
 | `/crates set <crate>` | `havoccrates.admin` | Bind the block you are looking at |
@@ -40,7 +43,17 @@ Reads the previous plugin's `crates.yml` as-is - no conversion needed.
 | `/key remove <player> <crate> <amount>` | `havoccrates.admin` | Remove keys |
 | `/key set <player> <crate> <amount>` | `havoccrates.admin` | Set a key balance |
 
-Aliases: `/crate`, `/hcrates`, `/havoccrates`, `/keys`, `/hkey`.
+Aliases: `/opencrate`, `/crateopen` for `/crate`; `/hcrates`, `/havoccrates`, `/cratesadmin` for
+`/crates`; `/keys`, `/hkey` for `/key`.
+
+`/crate` is configurable under `CRATE-COMMAND`:
+
+```yaml
+CRATE-COMMAND:
+  SOUND: "block.chest.open"
+  PER-CRATE-PERMISSION: false   # true -> also needs havoccrates.crate.<crate>
+  REQUIRE-KEYS: false           # true -> only opens if the player holds a key for it
+```
 
 ## Confirm menu
 
@@ -184,7 +197,7 @@ mvn clean package
 Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin targets 21 as
 well (that is also the Java version Minecraft 1.20.6+ servers run on).
 
-Output: `target/HavocCrates-3.4.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
+Output: `target/HavocCrates-3.5.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
 builds on every push, uploads the jar as an artifact, and attaches it to a release on a `v*` tag.
 
 ### Building for a Java 17 server
