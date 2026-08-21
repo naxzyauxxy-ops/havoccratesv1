@@ -36,6 +36,23 @@ CRATE-VIEW-MENU:
     - ""
     - "&7Your keys: &c%keys%"
 
+# Players can silence the crate messages with /cratealerts (aliases: /togglecratealerts,
+# /cratemessages). Only the messages listed under TOGGLEABLE are affected - errors such as
+# NOT_ENOUGH_KEYS and INVENTORY_FULL always come through.
+#
+# Placeholders for a settings menu or scoreboard:
+#   %havoccrates_alerts_status%  -> Enabled / Disabled (the two strings below)
+#   %havoccrates_alerts%         -> true / false
+ALERTS:
+  # Default for a player who has never touched the setting.
+  DEFAULT: true
+  STATUS-ENABLED: "&aEnabled"
+  STATUS-DISABLED: "&cDisabled"
+  TOGGLEABLE:
+    - REWARD_RECEIVED
+    - INVENTORY_PARTIAL
+    - RECEIVED_KEYS
+
 # /crate [crate] opens a crate menu from anywhere in the world.
 #   /crate                -> lists the crates and your key count for each
 #   /crate Rare           -> opens the Rare crate
@@ -273,6 +290,8 @@ MESSAGES:
   CRATE_UNSET: "&cThis block is no longer the crate &#FF5555%crate%&c."
   CRATE_PROTECTED: "&cThis block belongs to the crate &#FF5555%crate%&c."
   NO_CRATES_FOUND: "&cNo crates found."
+  ALERTS_ENABLED: "&cCrate messages are now &#FF5555enabled&c."
+  ALERTS_DISABLED: "&cCrate messages are now &#FF5555disabled&c. &7(/cratealerts to turn them back on)"
   CRATE_OPENED_FOR: "&cOpened &#FF5555%crate%&c for &#FF5555%player%&c."
   CRATE_LIST_HEADER: "&cCrates &8(&#FF5555%amount%&8)"
   CRATE_LIST_ENTRY: "&8 ▪ &#FF5555%crate% &7keys&8: &c%keys% &8- &7/%label% %crate%"

@@ -24,6 +24,9 @@ public class FlatfileStorage implements KeyStorage {
 
     @Override
     public void load(Profile profile) {
+        profile.setAlerts(this.config.getConfiguration()
+                .getBoolean("PLAYERS." + profile.getUuid() + ".ALERTS",
+                        this.plugin.getMainConfig().getBoolean("ALERTS.DEFAULT", true)));
         ConfigurationSection section = this.config.getConfiguration()
                 .getConfigurationSection("PLAYERS." + profile.getUuid() + ".KEYS");
         profile.getKeys().clear();
@@ -39,6 +42,7 @@ public class FlatfileStorage implements KeyStorage {
     public void save(Profile profile) {
         String base = "PLAYERS." + profile.getUuid();
         synchronized (this.config) {
+            this.config.getConfiguration().set(base + ".ALERTS", profile.isAlerts());
             this.config.getConfiguration().set(base + ".KEYS", null);
             profile.getKeys().forEach((crate, amount) ->
                     this.config.getConfiguration().set(base + ".KEYS." + crate, amount));

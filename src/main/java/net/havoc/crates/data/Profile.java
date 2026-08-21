@@ -11,6 +11,8 @@ public class Profile {
 
     private final UUID uuid;
     private final Map<String, Integer> keys = new HashMap<>();
+    /** false = crate alert messages are silenced for this player */
+    private boolean alerts = true;
     private boolean dirty;
 
     public Profile(UUID uuid) {
@@ -19,6 +21,15 @@ public class Profile {
 
     public UUID getUuid() {
         return this.uuid;
+    }
+
+    public boolean isAlerts() {
+        return this.alerts;
+    }
+
+    public void setAlerts(boolean alerts) {
+        this.alerts = alerts;
+        this.dirty = true;
     }
 
     public Map<String, Integer> getKeys() {

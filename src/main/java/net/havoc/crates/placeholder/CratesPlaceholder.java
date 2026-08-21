@@ -8,7 +8,8 @@ import org.bukkit.OfflinePlayer;
 /**
  * PlaceholderAPI hook.
  *
- * <p>%havoccrates_keys_&lt;crate&gt;% and %havoccrates_keys_total%
+ * <p>%havoccrates_keys_&lt;crate&gt;%, %havoccrates_keys_total%,
+ * %havoccrates_alerts_status% (Enabled/Disabled) and %havoccrates_alerts% (true/false)
  */
 public class CratesPlaceholder extends PlaceholderExpansion {
 
@@ -44,6 +45,14 @@ public class CratesPlaceholder extends PlaceholderExpansion {
             return "0";
         }
         Profile profile = this.plugin.getProfileManager().getProfile(player.getUniqueId());
+        if (params.equalsIgnoreCase("alerts_status") || params.equalsIgnoreCase("alerts_state")) {
+            return player.isOnline() && player.getPlayer() != null
+                    ? this.plugin.getAlertStatus(player.getPlayer())
+                    : String.valueOf(profile.isAlerts());
+        }
+        if (params.equalsIgnoreCase("alerts")) {
+            return String.valueOf(profile.isAlerts());
+        }
         if (params.equalsIgnoreCase("keys_total")) {
             return String.valueOf(profile.getTotalKeys());
         }

@@ -18,6 +18,11 @@ commands:
     usage: /crate [crate]
     aliases: [opencrate, crateopen]
     permission: havoccrates.crate
+  cratealerts:
+    description: Turn the crate messages on or off for yourself.
+    usage: /cratealerts [on|off]
+    aliases: [togglecratealerts, cratemessages, togglecratemessages, cratealert]
+    permission: havoccrates.alerts
   key:
     description: Manage crate keys.
     usage: /key
@@ -29,4 +34,7 @@ permissions:
     default: op
   havoccrates.crate:
     description: Use /crate to open a crate menu from anywhere.
+    default: true
+  havoccrates.alerts:
+    description: Use /cratealerts to silence or restore the crate messages.
     default: true
