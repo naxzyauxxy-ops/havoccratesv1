@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -64,6 +65,10 @@ public class CratesPlugin extends JavaPlugin {
         // Players already online during a reload still need a profile.
         Bukkit.getOnlinePlayers().forEach(player -> this.profileManager.loadAsync(player.getUniqueId()));
 
+        if (!this.mainConfig.getConfiguration().contains("ALERTS")) {
+            getLogger().info("config.yml has no ALERTS section - using the built-in defaults "
+                    + "(REWARD_RECEIVED, INVENTORY_PARTIAL, RECEIVED_KEYS can be silenced with /cratealerts).");
+        }
         getLogger().info("HavocCrates v" + getDescription().getVersion() + " enabled.");
     }
 
@@ -135,28 +140,79 @@ public class CratesPlugin extends JavaPlugin {
     }
 
     /**
+     * Messages a player can silence with /cratealerts, used when the config has no ALERTS section
+     * (an older config.yml would otherwise silence nothing at all).
+     */
+    private static final List<String> DEFAULT_TOGGLEABLE =
+            Arrays.asList("REWARD_RECEIVED", "INVENTORY_PARTIAL", "RECEIVED_KEYS");
+
+    /**
+     * Never silenced, whatever the config says - a player must always learn why something failed.
+     */
+    private static final List<String> DEFAULT_ALWAYS_SHOW = Arrays.asList(
+            "NOT_ENOUGH_KEYS", "INVENTORY_FULL", "NO_PERMISSION", "PLAYERS_ONLY",
+            "PLAYER_NOT_FOUND", "NO_CRATE_FOUND", "NO_CRATES_FOUND", "CRATE_PROTECTED",
+            "ALERTS_ENABLED", "ALERTS_DISABLED");
+
+    /**
      * A message listed under ALERTS.TOGGLEABLE is skipped for players who ran /cratealerts off.
-     * Errors such as NOT_ENOUGH_KEYS are never in that list, so nothing important is ever hidden.
+     * ALERTS.TOGGLEABLE may also be a single "*" to silence everything that is not an error.
      */
     private boolean isSilenced(CommandSender sender, String key) {
         if (!(sender instanceof Player) || this.profileManager == null) {
             return false;
         }
+        if (this.profileManager.getProfile((Player) sender).isAlerts()) {
+            return false;
+        }
+
+        List<String> alwaysShow = this.mainConfig.getConfiguration().getStringList("ALERTS.ALWAYS-SHOW");
+        if (alwaysShow == null || alwaysShow.isEmpty()) {
+            alwaysShow = DEFAULT_ALWAYS_SHOW;
+        }
+        if (contains(alwaysShow, key)) {
+            return false;
+        }
+
         List<String> toggleable = this.mainConfig.getConfiguration().getStringList("ALERTS.TOGGLEABLE");
         if (toggleable == null || toggleable.isEmpty()) {
-            return false;
+            toggleable = DEFAULT_TOGGLEABLE;
         }
-        boolean listed = false;
-        for (String entry : toggleable) {
-            if (entry != null && entry.equalsIgnoreCase(key)) {
-                listed = true;
-                break;
+        return contains(toggleable, "*") || contains(toggleable, key);
+    }
+
+    private boolean contains(List<String> list, String value) {
+        for (String entry : list) {
+            if (entry != null && entry.trim().equalsIgnoreCase(value)) {
+                return true;
             }
         }
-        if (!listed) {
-            return false;
+        return false;
+    }
+
+    /**
+     * Plays a sound written as "sound", "sound|volume" or "sound|volume|pitch".
+     */
+    public void playSound(Player player, String path, String def) {
+        String raw = this.mainConfig.getString(path, def);
+        if (raw == null || raw.trim().isEmpty() || raw.equalsIgnoreCase("none")) {
+            return;
         }
-        return !this.profileManager.getProfile((Player) sender).isAlerts();
+        String[] parts = raw.split("\\|");
+        String sound = parts[0].trim();
+        float volume = 1.0f;
+        float pitch = 1.0f;
+        try {
+            if (parts.length > 1) {
+                volume = Float.parseFloat(parts[1].trim());
+            }
+            if (parts.length > 2) {
+                pitch = Float.parseFloat(parts[2].trim());
+            }
+        } catch (NumberFormatException exception) {
+            getLogger().warning("Bad sound volume/pitch in " + path + ": " + raw);
+        }
+        player.playSound(player.getLocation(), sound, volume, pitch);
     }
 
     /**

@@ -51,7 +51,8 @@ public class AlertsCommand implements CommandExecutor, TabCompleter {
         this.plugin.getProfileManager().saveAsync(profile);
         // Sent with the raw sender so turning the messages back on is always confirmed.
         this.plugin.messageAlways(player, enabled ? "ALERTS_ENABLED" : "ALERTS_DISABLED");
-        player.playSound(player.getLocation(), "ui.button.click", 0.7f, enabled ? 1.4f : 0.8f);
+        this.plugin.playSound(player, "SOUNDS.BUTTON-CLICK",
+                "minecraft:block.bubble_column.bubble_pop|0.8|1.2");
         return true;
     }
 

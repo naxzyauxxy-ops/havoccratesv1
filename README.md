@@ -126,12 +126,23 @@ ALERTS:
     - RECEIVED_KEYS
 ```
 
-Anything not in `TOGGLEABLE` - `NOT_ENOUGH_KEYS`, `INVENTORY_FULL`, permission errors - is always
+`TOGGLEABLE: ["*"]` hides every non-error message at once. Anything not in `TOGGLEABLE` - `NOT_ENOUGH_KEYS`, `INVENTORY_FULL`, permission errors - is always
 delivered, so nobody can silence themselves into confusion. The setting is saved per player
 (flatfile, SQLite or MySQL) and survives relogs.
 
 For a settings menu or scoreboard: `%havoccrates_alerts_status%` renders as ON / OFF and
 `%havoccrates_alerts%` gives true / false.
+
+## Sounds
+
+Written as `sound`, `sound|volume` or `sound|volume|pitch`; `none` mutes one.
+
+```yaml
+SOUNDS:
+  BUTTON-CLICK: "minecraft:block.bubble_column.bubble_pop|0.8|1.2"   # quantity buttons + /cratealerts
+  PURCHASE: "minecraft:entity.player.levelup|1.0|1.0"
+  ERROR: "minecraft:entity.villager.no|1.0|1.0"
+```
 
 ## Filling the inventory
 
@@ -222,7 +233,7 @@ mvn clean package
 Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin targets 21 as
 well (that is also the Java version Minecraft 1.20.6+ servers run on).
 
-Output: `target/HavocCrates-3.7.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
+Output: `target/HavocCrates-3.8.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
 builds on every push, uploads the jar as an artifact, and attaches it to a release on a `v*` tag.
 
 ### Building for a Java 17 server

@@ -43,22 +43,41 @@ CRATE-VIEW-MENU:
 # Placeholders for a settings menu or scoreboard:
 #   %havoccrates_alerts_status%  -> ON / OFF (the two strings below)
 #   %havoccrates_alerts%         -> true / false
+# Sounds are written as "sound", "sound|volume" or "sound|volume|pitch". Use "none" to mute one.
+SOUNDS:
+  BUTTON-CLICK: "minecraft:block.bubble_column.bubble_pop|0.8|1.2"
+  PURCHASE: "minecraft:entity.player.levelup|1.0|1.0"
+  ERROR: "minecraft:entity.villager.no|1.0|1.0"
+
 ALERTS:
   # Default for a player who has never touched the setting.
   DEFAULT: true
   STATUS-ENABLED: "&aON"
   STATUS-DISABLED: "&cOFF"
+  # Messages /cratealerts off will hide. Use a single "*" to hide every non-error message.
   TOGGLEABLE:
     - REWARD_RECEIVED
     - INVENTORY_PARTIAL
     - RECEIVED_KEYS
+  # Never hidden, whatever is listed above.
+  ALWAYS-SHOW:
+    - NOT_ENOUGH_KEYS
+    - INVENTORY_FULL
+    - NO_PERMISSION
+    - PLAYERS_ONLY
+    - PLAYER_NOT_FOUND
+    - NO_CRATE_FOUND
+    - NO_CRATES_FOUND
+    - CRATE_PROTECTED
+    - ALERTS_ENABLED
+    - ALERTS_DISABLED
 
 # /crate [crate] opens a crate menu from anywhere in the world.
 #   /crate                -> lists the crates and your key count for each
 #   /crate Rare           -> opens the Rare crate
 #   /crate Rare <player>  -> opens it for someone else (needs havoccrates.admin)
 CRATE-COMMAND:
-  SOUND: "block.chest.open"
+  SOUND: "minecraft:block.chest.open|1.0|1.0"
   # true -> a player also needs havoccrates.crate.<crate> for that specific crate
   PER-CRATE-PERMISSION: false
   # true -> the menu only opens when the player holds at least one key for that crate
@@ -89,7 +108,7 @@ CONFIRM-MENU:
   # false -> nothing is dropped: the inventory is filled with as many as fit and you are only
   #          charged for those (existing items are never replaced)
   DROP-OVERFLOW: true
-  SOUND: "entity.player.levelup"
+  SOUND: "minecraft:entity.player.levelup|1.0|1.0"
   ITEM-LORE:
     - ""
     - "&8▪ &7Amount &8» &f%amount%"

@@ -72,8 +72,7 @@ public class CrateCommand implements CommandExecutor, TabCompleter {
         }
 
         new CrateViewMenu(this.plugin, crate).openMenu(target);
-        target.playSound(target.getLocation(),
-                this.plugin.getMainConfig().getString("CRATE-COMMAND.SOUND", "block.chest.open"), 1.0f, 1.0f);
+        this.plugin.playSound(target, "CRATE-COMMAND.SOUND", "minecraft:block.chest.open|1.0|1.0");
         if (!target.equals(sender)) {
             this.plugin.message(sender, "CRATE_OPENED_FOR",
                     "%crate%", crate.getName(), "%player%", target.getName());

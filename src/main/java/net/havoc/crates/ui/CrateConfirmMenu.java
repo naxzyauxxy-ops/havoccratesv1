@@ -338,7 +338,7 @@ public class CrateConfirmMenu extends Menu {
         if (keys < 1) {
             this.plugin.message(player, "NOT_ENOUGH_KEYS",
                     "%crate%", this.crate.getName(), "%amount%", String.valueOf(this.amount));
-            player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+            this.plugin.playSound(player, "SOUNDS.ERROR", "minecraft:entity.villager.no|1.0|1.0");
             return;
         }
 
@@ -353,7 +353,7 @@ public class CrateConfirmMenu extends Menu {
             int roomPurchases = roomItems / this.bundle;
             if (roomPurchases <= 0) {
                 this.plugin.message(player, "INVENTORY_FULL");
-                player.playSound(player.getLocation(), "entity.villager.no", 1.0f, 1.0f);
+                this.plugin.playSound(player, "SOUNDS.ERROR", "minecraft:entity.villager.no|1.0|1.0");
                 return;
             }
             delivered = Math.min(requested, roomPurchases);
@@ -391,8 +391,8 @@ public class CrateConfirmMenu extends Menu {
                     "%left_items%", String.valueOf((requested - purchased) * this.bundle),
                     "%item%", itemName());
         }
-        player.playSound(player.getLocation(),
-                config().getString("CONFIRM-MENU.SOUND", "entity.player.levelup"), 1.0f, 1.0f);
+        this.plugin.playSound(player, "SOUNDS.PURCHASE",
+                config().getString("CONFIRM-MENU.SOUND", "minecraft:entity.player.levelup|1.0|1.0"));
 
         if (profile.getKeyAmount(this.crate.getKey()) <= 0) {
             player.closeInventory();
@@ -551,8 +551,8 @@ public class CrateConfirmMenu extends Menu {
                     setAmount(player, clickType.isShiftClick() ? max : current + this.value);
                     break;
             }
-            boolean up = CrateConfirmMenu.this.amount >= current;
-            player.playSound(player.getLocation(), "ui.button.click", 0.6f, up ? 1.4f : 0.8f);
+            CrateConfirmMenu.this.plugin.playSound(player, "SOUNDS.BUTTON-CLICK",
+                    "minecraft:block.bubble_column.bubble_pop|0.8|1.2");
         }
 
         @Override
