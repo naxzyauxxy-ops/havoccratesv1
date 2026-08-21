@@ -21,7 +21,7 @@ Reads the previous plugin's `crates.yml` as-is - no conversion needed.
 | Same alignment | Each crate uses its own `ROWS` and centers its rewards like before (7 -> slots 10-16, 6 -> 10-15, 5 -> 11-15, 2 -> 12-13) |
 | Storage | Flatfile by default, SQLite or MySQL optionally |
 | Toggleable messages | `/cratealerts` silences the purchase spam per player; errors always come through |
-| PlaceholderAPI | `%havoccrates_keys_<crate>%`, `%havoccrates_keys_total%`, `%havoccrates_alerts_status%`, `%havoccrates_alerts%` |
+| PlaceholderAPI | `%havoccrates_keys_<crate>%`, `%havoccrates_keys_total%`, `%havoccrates_alerts_status%` (ON/OFF), `%havoccrates_alerts%` |
 
 ## Commands
 
@@ -118,8 +118,8 @@ Buying in bulk is chatty, so every player can silence it with `/cratealerts` (al
 ```yaml
 ALERTS:
   DEFAULT: true                 # for players who never touched the setting
-  STATUS-ENABLED: "&aEnabled"
-  STATUS-DISABLED: "&cDisabled"
+  STATUS-ENABLED: "&aON"
+  STATUS-DISABLED: "&cOFF"
   TOGGLEABLE:                   # only these can be silenced
     - REWARD_RECEIVED
     - INVENTORY_PARTIAL
@@ -130,7 +130,7 @@ Anything not in `TOGGLEABLE` - `NOT_ENOUGH_KEYS`, `INVENTORY_FULL`, permission e
 delivered, so nobody can silence themselves into confusion. The setting is saved per player
 (flatfile, SQLite or MySQL) and survives relogs.
 
-For a settings menu or scoreboard: `%havoccrates_alerts_status%` renders as Enabled / Disabled and
+For a settings menu or scoreboard: `%havoccrates_alerts_status%` renders as ON / OFF and
 `%havoccrates_alerts%` gives true / false.
 
 ## Filling the inventory
@@ -222,7 +222,7 @@ mvn clean package
 Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin targets 21 as
 well (that is also the Java version Minecraft 1.20.6+ servers run on).
 
-Output: `target/HavocCrates-3.6.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
+Output: `target/HavocCrates-3.7.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
 builds on every push, uploads the jar as an artifact, and attaches it to a release on a `v*` tag.
 
 ### Building for a Java 17 server

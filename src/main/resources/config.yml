@@ -41,13 +41,13 @@ CRATE-VIEW-MENU:
 # NOT_ENOUGH_KEYS and INVENTORY_FULL always come through.
 #
 # Placeholders for a settings menu or scoreboard:
-#   %havoccrates_alerts_status%  -> Enabled / Disabled (the two strings below)
+#   %havoccrates_alerts_status%  -> ON / OFF (the two strings below)
 #   %havoccrates_alerts%         -> true / false
 ALERTS:
   # Default for a player who has never touched the setting.
   DEFAULT: true
-  STATUS-ENABLED: "&aEnabled"
-  STATUS-DISABLED: "&cDisabled"
+  STATUS-ENABLED: "&aON"
+  STATUS-DISABLED: "&cOFF"
   TOGGLEABLE:
     - REWARD_RECEIVED
     - INVENTORY_PARTIAL

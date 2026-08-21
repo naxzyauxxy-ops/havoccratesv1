@@ -9,7 +9,7 @@ import org.bukkit.OfflinePlayer;
  * PlaceholderAPI hook.
  *
  * <p>%havoccrates_keys_&lt;crate&gt;%, %havoccrates_keys_total%,
- * %havoccrates_alerts_status% (Enabled/Disabled) and %havoccrates_alerts% (true/false)
+ * %havoccrates_alerts_status% (ON/OFF) and %havoccrates_alerts% (true/false)
  */
 public class CratesPlaceholder extends PlaceholderExpansion {
 

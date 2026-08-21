@@ -2,7 +2,7 @@
 # The new line is:
 #   - LABEL: "  Crate Alerts: %havoccrates_alerts_status%"
 #     COMMAND: "cratealerts"
-# %havoccrates_alerts_status% renders as Enabled / Disabled (configurable in HavocCrates config.yml
+# %havoccrates_alerts_status% renders as ON / OFF (configurable in HavocCrates config.yml
 # under ALERTS.STATUS-ENABLED / ALERTS.STATUS-DISABLED).
 
 SETTINGS_DIALOG:

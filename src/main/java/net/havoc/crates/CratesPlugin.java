@@ -160,12 +160,12 @@ public class CratesPlugin extends JavaPlugin {
     }
 
     /**
-     * "Enabled" / "Disabled" for placeholders and settings menus.
+     * "ON" / "OFF" for placeholders and settings menus.
      */
     public String getAlertStatus(Player player) {
         boolean enabled = this.profileManager.getProfile(player).isAlerts();
         return CC.translate(enabled
-                ? this.mainConfig.getString("ALERTS.STATUS-ENABLED", "&aEnabled")
-                : this.mainConfig.getString("ALERTS.STATUS-DISABLED", "&cDisabled"));
+                ? this.mainConfig.getString("ALERTS.STATUS-ENABLED", "&aON")
+                : this.mainConfig.getString("ALERTS.STATUS-DISABLED", "&cOFF"));
     }
 }
