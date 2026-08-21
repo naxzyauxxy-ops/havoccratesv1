@@ -32,8 +32,29 @@ jobs:
           java -version
           mvn -v
 
+      # repo.papermc.io occasionally returns 502/503/530 (Cloudflare "origin unreachable").
+      # That is an outage on their side, not a build problem, so retry a few times before failing.
       - name: Build with Maven
-        run: mvn -B -ntp clean package
+        run: |
+          set -o pipefail
+          MVN_OPTS="-B -ntp -U -Dmaven.wagon.http.retryHandler.count=3 -Dmaven.wagon.httpconnectionManager.ttlSeconds=25"
+          for attempt in 1 2 3 4; do
+            echo "::group::Maven attempt $attempt"
+            if mvn $MVN_OPTS clean package; then
+              echo "::endgroup::"
+              exit 0
+            fi
+            echo "::endgroup::"
+            if [ $attempt -lt 4 ]; then
+              echo "Build failed (likely repo.papermc.io being unreachable). Retrying in 60s..."
+              sleep 60
+            fi
+          done
+          echo "Maven failed 4 times. If the log shows 'status code: 530' or 502/503 from"
+          echo "repo.papermc.io, their repository is down - check https://status.papermc.io"
+          echo "and re-run this workflow later, or switch to the spigot-api dependency"
+          echo "documented in pom.xml."
+          exit 1
 
       - name: Upload jar
         uses: actions/upload-artifact@v4
