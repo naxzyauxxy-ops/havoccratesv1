@@ -346,7 +346,11 @@ public class CrateConfirmMenu extends Menu {
         boolean dropOverflow = config().getBoolean("CONFIRM-MENU.DROP-OVERFLOW", true);
         int delivered = requested;
 
-        if (!dropOverflow) {
+        // A reward with commands is a preview of what the command hands out (Ruby's netherite
+        // pickaxe icon really gives a voyager amethyst pickaxe), so the icon itself is not given.
+        boolean commandOnly = isCommandOnly();
+
+        if (!commandOnly && !dropOverflow) {
             // Fill whatever room there is instead of refusing the whole purchase. 64 chestplates
             // need 64 free slots and nobody has that, so buy as many as actually fit.
             int roomItems = InventoryUtil.fitCount(player, this.reward, requested * this.bundle);
@@ -366,12 +370,14 @@ public class CrateConfirmMenu extends Menu {
         }
         this.plugin.getProfileManager().saveAsync(profile);
 
-        // addItem only tops up matching stacks and uses empty slots, so nothing already in the
-        // inventory is ever overwritten.
-        List<ItemStack> stacks = InventoryUtil.split(this.reward, delivered * this.bundle);
-        List<ItemStack> leftovers = InventoryUtil.give(player, stacks, dropOverflow);
-        for (ItemStack leftover : leftovers) {
-            player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+        if (!commandOnly) {
+            // addItem only tops up matching stacks and uses empty slots, so nothing already in the
+            // inventory is ever overwritten.
+            List<ItemStack> stacks = InventoryUtil.split(this.reward, delivered * this.bundle);
+            List<ItemStack> leftovers = InventoryUtil.give(player, stacks, dropOverflow);
+            for (ItemStack leftover : leftovers) {
+                player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+            }
         }
 
         int purchased = delivered;
@@ -400,6 +406,15 @@ public class CrateConfirmMenu extends Menu {
         }
         setAmount(player, this.amount);
         update(player);
+    }
+
+    /**
+     * True when this reward's commands replace the item: the icon is only there to show what the
+     * command gives. Set CONFIRM-MENU.COMMANDS-REPLACE-ITEM to false to hand over both.
+     */
+    private boolean isCommandOnly() {
+        return !this.crate.getCommands(this.rewardKey).isEmpty()
+                && config().getBoolean("CONFIRM-MENU.COMMANDS-REPLACE-ITEM", true);
     }
 
     /**

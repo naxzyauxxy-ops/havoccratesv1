@@ -101,6 +101,10 @@ CONFIRM-MENU:
   #   true  -> MAX_QUANTITY below counts ITEMS, so SPAWNER: 16 with a 16 spawner reward = 1 buy
   #   false -> MAX_QUANTITY counts purchases, so SPAWNER: 16 would allow 16 x 16 = 256 spawners
   RESTRICTIONS-IN-ITEMS: true
+  # A reward slot that has COMMANDS in crates.yml is treated as a preview: the command hands out
+  # the real reward, so the icon itself is NOT put in the inventory (Ruby shows a netherite
+  # pickaxe but gives a voyager amethyst pickaxe). Set to false to give the icon as well.
+  COMMANDS-REPLACE-ITEM: true
   # Hides a quantity button when clicking it would not change anything, so "Remove 64" only shows
   # once you are above 64 and "Add 10" disappears at the limit. Set to false to always show them.
   HIDE-UNUSABLE-BUTTONS: true

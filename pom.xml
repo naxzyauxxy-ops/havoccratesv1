@@ -6,7 +6,7 @@
 
     <groupId>net.havoc</groupId>
     <artifactId>HavocCrates</artifactId>
-    <version>3.8</version>
+    <version>3.9</version>
     <packaging>jar</packaging>
     <name>HavocCrates</name>
 
@@ -34,12 +34,26 @@
     </repositories>
 
     <dependencies>
+        <!--
+            The plugin only uses the plain Bukkit API, so any of these work as the compile
+            dependency. If repo.papermc.io is down (HTTP 502/503/530), comment this out and
+            uncomment the spigot-api block below - nothing in the source needs to change.
+        -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
             <version>1.20.6-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
+
+        <!-- Fallback, served by hub.spigotmc.org instead of repo.papermc.io:
+        <dependency>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-api</artifactId>
+            <version>1.20.6-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        -->
         <dependency>
             <groupId>me.clip</groupId>
             <artifactId>placeholderapi</artifactId>

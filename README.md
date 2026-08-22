@@ -207,6 +207,10 @@ Common:
       ...
 ```
 
+* A reward slot **with commands only runs the commands** - the item in the slot is a preview of
+  what the command gives, not a second reward. Ruby shows a netherite pickaxe and runs
+  `voyager amethyst pickaxe {player} 7d`, so the player gets the voyager tool and not the icon.
+  Set `CONFIRM-MENU.COMMANDS-REPLACE-ITEM: false` to hand over both.
 * `COMMANDS` may be keyed by reward key **or** by the slot the reward is drawn on - the old plugin
   wrote both (Ruby stores rewards as 1-5 and commands as 11-15). Both are matched up on load.
 * `{player}`, `{crate}`, `{amount}` and the `%player%` style are all replaced.
@@ -233,7 +237,7 @@ mvn clean package
 Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin targets 21 as
 well (that is also the Java version Minecraft 1.20.6+ servers run on).
 
-Output: `target/HavocCrates-3.8.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
+Output: `target/HavocCrates-3.9.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
 builds on every push, uploads the jar as an artifact, and attaches it to a release on a `v*` tag.
 
 ### Building for a Java 17 server
