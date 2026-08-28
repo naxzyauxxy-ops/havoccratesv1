@@ -56,11 +56,23 @@ public class ProfileManager {
         return getProfile(player.getUniqueId());
     }
 
+    /**
+     * Pre-loads a profile off the main thread when a player joins.
+     *
+     * <p>If something already cached (and possibly changed) the profile while this was running -
+     * an admin running /key give the instant a player joins, for example - the freshly read copy
+     * is dropped instead of overwriting it. That synchronous path reads the same storage, so no
+     * data is lost either way; what this prevents is a late async read wiping keys that were just
+     * handed out, which would then be written back to disk on quit.
+     */
     public void loadAsync(UUID uuid) {
+        if (this.profiles.containsKey(uuid)) {
+            return;
+        }
         Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> {
             Profile profile = new Profile(uuid);
             this.storage.load(profile);
-            this.profiles.put(uuid, profile);
+            this.profiles.putIfAbsent(uuid, profile);
         });
     }
 

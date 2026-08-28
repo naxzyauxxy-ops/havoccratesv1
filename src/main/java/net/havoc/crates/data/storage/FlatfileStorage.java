@@ -23,7 +23,7 @@ public class FlatfileStorage implements KeyStorage {
     }
 
     @Override
-    public void load(Profile profile) {
+    public synchronized void load(Profile profile) {
         profile.setAlerts(this.config.getConfiguration()
                 .getBoolean("PLAYERS." + profile.getUuid() + ".ALERTS",
                         this.plugin.getMainConfig().getBoolean("ALERTS.DEFAULT", true)));
