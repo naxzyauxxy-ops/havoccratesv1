@@ -38,6 +38,7 @@ Reads the previous plugin's `crates.yml` as-is - no conversion needed.
 | `/crates open <crate> [player]` | `havoccrates.admin` | Open a crate menu |
 | `/crates list` | `havoccrates.admin` | List crates |
 | `/crates reload` | `havoccrates.admin` | Reload config.yml and crates.yml |
+| `/crates debug [player]` | `havoccrates.admin` | Version, data folder, storage, alert state in memory vs on disk |
 | `/cratealerts [on\|off]` | `havoccrates.alerts` (default: everyone) | Silence or restore the crate messages |
 | `/key check [player]` | - | Show key balances |
 | `/key give <player> <crate> <amount>` | `havoccrates.admin` | Give keys |
@@ -237,7 +238,7 @@ mvn clean package
 Needs **JDK 21** - `paper-api` 1.20.6 is itself compiled for Java 21, so the plugin targets 21 as
 well (that is also the Java version Minecraft 1.20.6+ servers run on).
 
-Output: `target/HavocCrates-3.10.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
+Output: `target/HavocCrates-3.11.jar`. The GitHub Actions workflow (`.github/workflows/build.yml`)
 builds on every push, uploads the jar as an artifact, and attaches it to a release on a `v*` tag.
 
 ### Building for a Java 17 server

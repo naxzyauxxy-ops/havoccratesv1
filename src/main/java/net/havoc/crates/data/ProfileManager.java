@@ -81,6 +81,20 @@ public class ProfileManager {
         Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> this.storage.save(profile));
     }
 
+    /**
+     * Reads a profile straight from storage, bypassing the cache. Used by /crates debug to show
+     * what is actually on disk versus what is in memory.
+     */
+    public Profile readFromStorage(UUID uuid) {
+        Profile profile = new Profile(uuid);
+        this.storage.load(profile);
+        return profile;
+    }
+
+    public String getStorageName() {
+        return this.storage.getClass().getSimpleName();
+    }
+
     public void unload(UUID uuid) {
         Profile profile = this.profiles.remove(uuid);
         if (profile != null) {

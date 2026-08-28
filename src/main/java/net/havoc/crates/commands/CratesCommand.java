@@ -2,6 +2,7 @@ package net.havoc.crates.commands;
 
 import net.havoc.crates.CratesPlugin;
 import net.havoc.crates.crate.Crate;
+import net.havoc.crates.data.Profile;
 import net.havoc.crates.ui.CrateEditMenu;
 import net.havoc.crates.ui.CrateViewMenu;
 import net.havoc.crates.util.CC;
@@ -24,7 +25,7 @@ import java.util.Locale;
 public class CratesCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUB_COMMANDS =
-            Arrays.asList("create", "delete", "set", "unset", "edit", "open", "list", "reload");
+            Arrays.asList("create", "delete", "set", "unset", "edit", "open", "list", "reload", "debug");
 
     private final CratesPlugin plugin;
 
@@ -146,6 +147,41 @@ public class CratesCommand implements CommandExecutor, TabCompleter {
                         + String.join("&7, &f", names)));
                 return true;
             }
+            case "debug": {
+                Player target = args.length >= 2 ? Bukkit.getPlayerExact(args[1])
+                        : (sender instanceof Player ? (Player) sender : null);
+                sender.sendMessage(CC.translate("&8&m------------------------------"));
+                sender.sendMessage(CC.translate("&cHavocCrates &7v"
+                        + this.plugin.getDescription().getVersion()));
+                sender.sendMessage(CC.translate("&7Data folder: &f"
+                        + this.plugin.getDataFolder().getAbsolutePath()));
+                sender.sendMessage(CC.translate("&7Storage: &f"
+                        + this.plugin.getProfileManager().getStorageName()));
+                sender.sendMessage(CC.translate("&7Crates loaded: &f"
+                        + this.plugin.getCrateManager().getCrates().size()));
+                boolean fromConfig = this.plugin.getMainConfig().getConfiguration().contains("ALERTS");
+                sender.sendMessage(CC.translate("&7ALERTS section in config.yml: &f" + fromConfig
+                        + (fromConfig ? "" : " &8(using built-in defaults)")));
+                sender.sendMessage(CC.translate("&7Silenceable: &f"
+                        + String.join(", ", this.plugin.getToggleableMessages())));
+                if (target == null) {
+                    sender.sendMessage(CC.translate("&8&m------------------------------"));
+                    return true;
+                }
+                Profile memory = this.plugin.getProfileManager().getProfile(target);
+                Profile disk = this.plugin.getProfileManager().readFromStorage(target.getUniqueId());
+                sender.sendMessage(CC.translate("&7Player: &f" + target.getName()));
+                sender.sendMessage(CC.translate("&7  alerts in memory: &f" + memory.isAlerts()));
+                sender.sendMessage(CC.translate("&7  alerts on disk: &f" + disk.isAlerts()));
+                sender.sendMessage(CC.translate("&7  keys in memory: &f"
+                        + (memory.getKeys().isEmpty() ? "none" : memory.getKeys().toString())));
+                sender.sendMessage(CC.translate("&7  keys on disk: &f"
+                        + (disk.getKeys().isEmpty() ? "none" : disk.getKeys().toString())));
+                sender.sendMessage(CC.translate("&7  REWARD_RECEIVED would be: &f"
+                        + (this.plugin.wouldSilence(target, "REWARD_RECEIVED") ? "SILENCED" : "SHOWN")));
+                sender.sendMessage(CC.translate("&8&m------------------------------"));
+                return true;
+            }
             case "reload": {
                 this.plugin.reloadAll();
                 this.plugin.message(sender, "CONFIG_RELOADED");
@@ -180,6 +216,7 @@ public class CratesCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(CC.translate("&7/" + label + " open <crate> [player]"));
         sender.sendMessage(CC.translate("&7/" + label + " list"));
         sender.sendMessage(CC.translate("&7/" + label + " reload"));
+        sender.sendMessage(CC.translate("&7/" + label + " debug [player] &8- version, storage and alert state"));
         sender.sendMessage(CC.translate("&8&m--------------------------"));
     }
 

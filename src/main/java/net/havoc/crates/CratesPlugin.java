@@ -181,6 +181,23 @@ public class CratesPlugin extends JavaPlugin {
         return contains(toggleable, "*") || contains(toggleable, key);
     }
 
+    /**
+     * The toggleable list actually in use, and whether it came from config.yml or the defaults.
+     */
+    public List<String> getToggleableMessages() {
+        List<String> toggleable = this.mainConfig.getConfiguration().getStringList("ALERTS.TOGGLEABLE");
+        return toggleable == null || toggleable.isEmpty() ? DEFAULT_TOGGLEABLE : toggleable;
+    }
+
+    public List<String> getAlwaysShownMessages() {
+        List<String> always = this.mainConfig.getConfiguration().getStringList("ALERTS.ALWAYS-SHOW");
+        return always == null || always.isEmpty() ? DEFAULT_ALWAYS_SHOW : always;
+    }
+
+    public boolean wouldSilence(CommandSender sender, String key) {
+        return isSilenced(sender, key);
+    }
+
     private boolean contains(List<String> list, String value) {
         for (String entry : list) {
             if (entry != null && entry.trim().equalsIgnoreCase(value)) {
