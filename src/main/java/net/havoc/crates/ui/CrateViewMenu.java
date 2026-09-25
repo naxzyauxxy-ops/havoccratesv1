@@ -1,9 +1,41 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.lang.CharSequence
+ *  java.lang.Integer
+ *  java.lang.Math
+ *  java.lang.Object
+ *  java.lang.Override
+ *  java.lang.String
+ *  java.util.ArrayList
+ *  java.util.HashMap
+ *  java.util.List
+ *  java.util.Map
+ *  java.util.Map$Entry
+ *  org.bukkit.Material
+ *  org.bukkit.configuration.file.FileConfiguration
+ *  org.bukkit.entity.Player
+ *  org.bukkit.event.inventory.ClickType
+ *  org.bukkit.inventory.ItemStack
+ */
 package net.havoc.crates.ui;
 
+import java.lang.CharSequence;
+import java.lang.Integer;
+import java.lang.Math;
+import java.lang.Object;
+import java.lang.Override;
+import java.lang.String;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import net.havoc.crates.CratesPlugin;
 import net.havoc.crates.crate.Crate;
 import net.havoc.crates.menu.Button;
 import net.havoc.crates.menu.Menu;
+import net.havoc.crates.ui.CrateConfirmMenu;
 import net.havoc.crates.util.CC;
 import net.havoc.crates.util.ItemBuilder;
 import net.havoc.crates.util.Restrictions;
@@ -13,20 +45,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-/**
- * Shows a crate's rewards using the crate's own TITLE and ROWS, with the same centered
- * alignment as before (7 rewards land on 10-16 of a 3 row menu, 5 on 11-15, and so on).
- *
- * <p>Left click buys one, right click jumps to a full stack, capped by the item's RESTRICTIONS
- * limit and by the keys owned.
- */
-public class CrateViewMenu extends Menu {
-
+public class CrateViewMenu
+extends Menu {
     private final CratesPlugin plugin;
     private final Crate crate;
 
@@ -43,9 +63,9 @@ public class CrateViewMenu extends Menu {
     public String getTitle(Player player) {
         String title = this.crate.getTitle();
         if (title == null || title.isEmpty()) {
-            title = config().getString("CRATE-VIEW-MENU.TITLE", "%crate%");
+            title = this.config().getString("CRATE-VIEW-MENU.TITLE", "%crate%");
         }
-        return CC.translate(title.replace("%crate%", this.crate.getName()));
+        return CC.translate(title.replace((CharSequence)"%crate%", (CharSequence)this.crate.getName()));
     }
 
     @Override
@@ -55,33 +75,133 @@ public class CrateViewMenu extends Menu {
 
     @Override
     public Map<Integer, Button> getButtons(Player player) {
-        Map<Integer, Button> buttons = new HashMap<>();
-        int size = getSize(player);
-
-        if (config().getBoolean("CRATE-VIEW-MENU.PLACEHOLDER", true)) {
-            ItemStack filler = ItemBuilder
-                    .of(config().getString("CRATE-VIEW-MENU.PLACEHOLDER-MATERIAL", "GRAY_STAINED_GLASS_PANE"),
-                            Material.GRAY_STAINED_GLASS_PANE)
-                    .name(config().getString("CRATE-VIEW-MENU.PLACEHOLDER-NAME", " "))
-                    .build();
-            for (int slot = 0; slot < size; slot++) {
+        HashMap<Integer, Button> buttons = new HashMap<Integer, Button>();
+        int size = this.getSize(player);
+        if (this.config().getBoolean("CRATE-VIEW-MENU.PLACEHOLDER", true)) {
+            ItemStack filler = ItemBuilder.of(this.config().getString("CRATE-VIEW-MENU.PLACEHOLDER-MATERIAL", "GRAY_STAINED_GLASS_PANE"), Material.GRAY_STAINED_GLASS_PANE).name(this.config().getString("CRATE-VIEW-MENU.PLACEHOLDER-NAME", " ")).build();
+            for (int slot = 0; slot < size; ++slot) {
                 buttons.put(slot, new FillerButton(filler));
             }
         }
-
-        for (Map.Entry<Integer, Integer> entry : this.crate.resolveSlots().entrySet()) {
-            int slot = entry.getKey();
-            ItemStack item = this.crate.getRewards().get(entry.getValue());
-            if (slot < 0 || slot >= size || item == null) {
-                continue;
-            }
-            buttons.put(slot, new CrateItemButton(entry.getValue(), item));
+        java.util.Set<Integer> used = new java.util.HashSet<Integer>();
+        for (Map.Entry entry : this.crate.resolveSlots().entrySet()) {
+            int slot = (Integer)entry.getKey();
+            ItemStack item = (ItemStack)this.crate.getRewards().get(entry.getValue());
+            if (slot < 0 || slot >= size || item == null) continue;
+            used.add(Integer.valueOf(slot));
+            buttons.put(slot, new CrateItemButton((Integer)entry.getValue(), item));
+        }
+        int presentSlot = this.presentSlot(size, used);
+        if (presentSlot >= 0) {
+            buttons.put(Integer.valueOf(presentSlot), new PresentButton());
         }
         return buttons;
     }
 
-    private static class FillerButton extends Button {
+    /**
+     * Where the mystery present sits: PRESENT.SLOT, or centered on the first row below the
+     * rewards when it is -1. Returns -1 when the present is disabled for this crate.
+     */
+    private int presentSlot(int size, java.util.Set<Integer> used) {
+        if (!this.config().getBoolean("PRESENT.ENABLED", true)) {
+            return -1;
+        }
+        List<String> crates = this.config().getStringList("PRESENT.CRATES");
+        if (crates != null && !crates.isEmpty()) {
+            boolean listed = false;
+            for (String name : crates) {
+                if (name == null) continue;
+                if (name.equalsIgnoreCase("ALL") || name.equalsIgnoreCase(this.crate.getName())) {
+                    listed = true;
+                    break;
+                }
+            }
+            if (!listed) {
+                return -1;
+            }
+        }
+        int configured = this.config().getInt("PRESENT.SLOT", -1);
+        if (configured >= 0) {
+            return configured < size ? configured : -1;
+        }
+        // Auto: middle of the last row that has no rewards in it.
+        for (int row = size / 9 - 1; row >= 0; --row) {
+            boolean free = true;
+            for (int column = 0; column < 9; ++column) {
+                if (!used.contains(Integer.valueOf(row * 9 + column))) continue;
+                free = false;
+                break;
+            }
+            if (free) {
+                return row * 9 + 4;
+            }
+        }
+        // Every row holds rewards - fall back to any free slot.
+        for (int slot = size - 1; slot >= 0; --slot) {
+            if (!used.contains(Integer.valueOf(slot))) {
+                return slot;
+            }
+        }
+        return -1;
+    }
 
+    /**
+     * The mystery present: one key, one random reward from this crate.
+     */
+    private class PresentButton
+    extends Button {
+        private PresentButton() {
+        }
+
+        private ItemStack icon(Player player) {
+            int keys = CrateViewMenu.this.plugin.getProfileManager()
+                    .getProfile(player).getKeyAmount(CrateViewMenu.this.crate.getKey());
+            int stack = Math.max(1, Math.min(
+                    CrateViewMenu.this.config().getInt("PRESENT.MAX-AMOUNT",
+                            CrateViewMenu.this.config().getInt("CONFIRM-MENU.MAX-AMOUNT", 64)),
+                    Math.max(1, keys)));
+            ArrayList<String> lore = new ArrayList<String>();
+            for (String line : CrateViewMenu.this.config().getStringList("PRESENT.LORE")) {
+                if (line.contains("%chances%")) {
+                    if (CrateViewMenu.this.config().getBoolean("PRESENT.SHOW-CHANCES", true)) {
+                        lore.addAll(net.havoc.crates.ui.CrateConfirmMenu.chanceLines(
+                                CrateViewMenu.this.plugin, CrateViewMenu.this.crate));
+                    }
+                    continue;
+                }
+                lore.add(line.replace("%keys%", String.valueOf(keys))
+                        .replace("%stack%", String.valueOf(stack))
+                        .replace("%rewards%", String.valueOf(CrateViewMenu.this.crate.getRewards().size()))
+                        .replace("%crate%", CrateViewMenu.this.crate.getName()));
+            }
+            return ItemBuilder.of(CrateViewMenu.this.config().getString("PRESENT.MATERIAL", "PINK_SHULKER_BOX"),
+                            Material.PINK_SHULKER_BOX)
+                    .name(CrateViewMenu.this.config().getString("PRESENT.NAME", "&c\u2744 &aMystery Present &c\u2744")
+                            .replace("%crate%", CrateViewMenu.this.crate.getName()))
+                    .lore(lore)
+                    .hideAttributes()
+                    .build();
+        }
+
+        @Override
+        public ItemStack getButtonItem(Player player) {
+            return this.icon(player);
+        }
+
+        @Override
+        public void clicked(Player player, int slot, ClickType clickType) {
+            int keys = CrateViewMenu.this.plugin.getProfileManager()
+                    .getProfile(player).getKeyAmount(CrateViewMenu.this.crate.getKey());
+            int max = Math.max(1, CrateViewMenu.this.config().getInt("PRESENT.MAX-AMOUNT",
+                    CrateViewMenu.this.config().getInt("CONFIRM-MENU.MAX-AMOUNT", 64)));
+            int amount = clickType.isRightClick() ? Math.max(1, Math.min(max, Math.max(1, keys))) : 1;
+            new CrateConfirmMenu(CrateViewMenu.this.plugin, CrateViewMenu.this.crate,
+                    this.icon(player), amount).openMenu(player);
+        }
+    }
+
+    private static class FillerButton
+    extends Button {
         private final ItemStack itemStack;
 
         FillerButton(ItemStack itemStack) {
@@ -94,8 +214,8 @@ public class CrateViewMenu extends Menu {
         }
     }
 
-    private class CrateItemButton extends Button {
-
+    private class CrateItemButton
+    extends Button {
         private final int rewardKey;
         private final ItemStack itemStack;
 
@@ -106,72 +226,52 @@ public class CrateViewMenu extends Menu {
 
         @Override
         public ItemStack getButtonItem(Player player) {
-            List<String> configured = config().getStringList("CRATE-VIEW-MENU.ITEM-LORE");
+            List<String> configured = CrateViewMenu.this.config().getStringList("CRATE-VIEW-MENU.ITEM-LORE");
             if (configured == null || configured.isEmpty()) {
                 return this.itemStack.clone();
             }
-            int keys = CrateViewMenu.this.plugin.getProfileManager()
-                    .getProfile(player).getKeyAmount(CrateViewMenu.this.crate.getKey());
-            int stack = stackAmount(player);
-            int bundle = Math.max(1, this.itemStack.getAmount());
-            List<String> lore = new ArrayList<>();
+            int keys = CrateViewMenu.this.plugin.getProfileManager().getProfile(player).getKeyAmount(CrateViewMenu.this.crate.getKey());
+            int stack = this.stackAmount(player);
+            int bundle = Math.max((int)1, (int)this.itemStack.getAmount());
+            ArrayList<String> lore = new ArrayList<String>();
             for (String line : configured) {
-                if (stack <= 1 && (line.contains("%stack%") || line.contains("%items%"))) {
-                    // Single purchase items (totems, shulkers) have nothing to bulk buy.
-                    continue;
-                }
-                lore.add(line
-                        .replace("%keys%", String.valueOf(keys))
-                        .replace("%stack%", String.valueOf(stack))
-                        .replace("%each%", String.valueOf(bundle))
-                        .replace("%items%", String.valueOf(stack * bundle))
-                        .replace("%one%", String.valueOf(bundle))
-                        .replace("%crate%", CrateViewMenu.this.crate.getName()));
+                if (stack <= 1 && (line.contains((CharSequence)"%stack%") || line.contains((CharSequence)"%items%"))) continue;
+                lore.add(line.replace((CharSequence)"%keys%", (CharSequence)String.valueOf((int)keys)).replace((CharSequence)"%stack%", (CharSequence)String.valueOf((int)stack)).replace((CharSequence)"%each%", (CharSequence)String.valueOf((int)bundle)).replace((CharSequence)"%items%", (CharSequence)String.valueOf((int)(stack * bundle))).replace((CharSequence)"%one%", (CharSequence)String.valueOf((int)bundle)).replace((CharSequence)"%crate%", (CharSequence)CrateViewMenu.this.crate.getName()));
             }
-            return new ItemBuilder(this.itemStack).appendLore(lore).build();
+            return new ItemBuilder(this.itemStack).appendLore((List<String>)lore).build();
         }
 
-        /**
-         * A full stack of this reward, limited by RESTRICTIONS and by the keys owned.
-         */
         private int stackAmount(Player player) {
-            Restrictions.Rule rule = Restrictions.resolve(CrateViewMenu.this.plugin, this.itemStack.getType());
-            int keys = CrateViewMenu.this.plugin.getProfileManager()
-                    .getProfile(player).getKeyAmount(CrateViewMenu.this.crate.getKey());
-            // One purchase hands over the stack configured in crates.yml, so counting is done in
-            // purchases: a reward of 16 spawners capped at 16 items is a single purchase.
-            int bundle = Math.max(1, this.itemStack.getAmount());
-            boolean inItems = CrateViewMenu.this.plugin.getMainConfig()
-                    .getBoolean("CONFIRM-MENU.RESTRICTIONS-IN-ITEMS", true);
-            int globalMax = Math.max(1, CrateViewMenu.this.plugin.getMainConfig()
-                    .getInt("CONFIRM-MENU.MAX-AMOUNT", 64));
-            int max;
             int min;
+            int max;
+            Restrictions.Rule rule = Restrictions.resolve(CrateViewMenu.this.plugin, this.itemStack.getType());
+            int keys = CrateViewMenu.this.plugin.getProfileManager().getProfile(player).getKeyAmount(CrateViewMenu.this.crate.getKey());
+            int bundle = Math.max((int)1, (int)this.itemStack.getAmount());
+            boolean inItems = CrateViewMenu.this.plugin.getMainConfig().getBoolean("CONFIRM-MENU.RESTRICTIONS-IN-ITEMS", true);
+            int globalMax = Math.max((int)1, (int)CrateViewMenu.this.plugin.getMainConfig().getInt("CONFIRM-MENU.MAX-AMOUNT", 64));
             if (rule.getMaxPurchases() > 0) {
-                max = Math.min(globalMax, rule.getMaxPurchases());
+                max = Math.min((int)globalMax, (int)rule.getMaxPurchases());
                 min = 1;
             } else if (inItems) {
-                max = Math.max(1, Math.min(globalMax, rule.getMax() / bundle));
-                min = Math.max(1, (int) Math.ceil((double) rule.getMin() / bundle));
+                max = Math.max((int)1, (int)Math.min((int)globalMax, (int)(rule.getMax() / bundle)));
+                min = Math.max((int)1, (int)((int)Math.ceil((double)((double)rule.getMin() / (double)bundle))));
             } else {
-                max = Math.min(globalMax, rule.getMax());
+                max = Math.min((int)globalMax, (int)rule.getMax());
                 min = rule.getMin();
             }
-            int stackSize = Math.max(1, this.itemStack.getMaxStackSize());
-            // Armour and other unstackable rewards still buy a full 64 unless restricted.
-            int wanted = stackSize > 1 ? Math.max(1, stackSize / bundle) : max;
-            int amount = Math.min(wanted, max);
+            int stackSize = Math.max((int)1, (int)this.itemStack.getMaxStackSize());
+            int wanted = stackSize > 1 ? Math.max((int)1, (int)(stackSize / bundle)) : max;
+            int amount = Math.min((int)wanted, (int)max);
             if (keys > 0) {
-                amount = Math.min(amount, keys);
+                amount = Math.min((int)amount, (int)keys);
             }
-            return Math.max(min, amount);
+            return Math.max((int)min, (int)amount);
         }
 
         @Override
         public void clicked(Player player, int slot, ClickType clickType) {
-            int amount = clickType.isRightClick() ? stackAmount(player) : 1;
-            new CrateConfirmMenu(CrateViewMenu.this.plugin, CrateViewMenu.this.crate,
-                    this.rewardKey, this.itemStack, amount).openMenu(player);
+            int amount = clickType.isRightClick() ? this.stackAmount(player) : 1;
+            new CrateConfirmMenu(CrateViewMenu.this.plugin, CrateViewMenu.this.crate, this.rewardKey, this.itemStack, amount).openMenu(player);
         }
     }
 }

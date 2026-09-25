@@ -1,32 +1,50 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.lang.Integer
+ *  java.lang.NumberFormatException
+ *  java.lang.Object
+ *  java.lang.String
+ *  java.util.ArrayList
+ *  java.util.Arrays
+ *  java.util.Collection
+ *  java.util.LinkedHashMap
+ *  java.util.List
+ *  java.util.Map
+ *  java.util.Map$Entry
+ *  org.bukkit.Location
+ *  org.bukkit.configuration.ConfigurationSection
+ *  org.bukkit.configuration.file.FileConfiguration
+ *  org.bukkit.inventory.ItemStack
+ */
 package net.havoc.crates.crate;
 
-import net.havoc.crates.CratesPlugin;
-import net.havoc.crates.util.Config;
-import org.bukkit.Location;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.inventory.ItemStack;
-
+import java.lang.Integer;
+import java.lang.NumberFormatException;
+import java.lang.Object;
+import java.lang.String;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import net.havoc.crates.CratesPlugin;
+import net.havoc.crates.crate.Crate;
+import net.havoc.crates.util.Config;
+import org.bukkit.Location;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.inventory.ItemStack;
 
-/**
- * Reads and writes crates.yml.
- *
- * <p>The native format is the one produced by the previous crates plugin: every crate is a
- * top level section holding TITLE, ROWS, LOCATIONS, COMMANDS, POSITIONS and REWARDS. A legacy
- * "CRATES:" root section is still understood.
- */
 public class CrateManager {
-
     private final CratesPlugin plugin;
-    private final Map<String, Crate> crates = new LinkedHashMap<>();
+    private final Map<String, Crate> crates = new LinkedHashMap();
 
     public CrateManager(CratesPlugin plugin) {
         this.plugin = plugin;
-        load();
+        this.load();
     }
 
     public Map<String, Crate> getCrates() {
@@ -34,7 +52,7 @@ public class CrateManager {
     }
 
     public Crate getCrate(String name) {
-        return name == null ? null : this.crates.get(name.toLowerCase());
+        return name == null ? null : (Crate)this.crates.get(name.toLowerCase());
     }
 
     public Crate getCrate(Location location) {
@@ -43,9 +61,8 @@ public class CrateManager {
         }
         String key = Crate.serialize(location);
         for (Crate crate : this.crates.values()) {
-            if (crate.getLocations().contains(key)) {
-                return crate;
-            }
+            if (!crate.getLocations().contains(key)) continue;
+            return crate;
         }
         return null;
     }
@@ -54,7 +71,7 @@ public class CrateManager {
         Crate crate = new Crate(name);
         crate.setTitle("&8" + name);
         this.crates.put(crate.getKey(), crate);
-        save();
+        this.save();
         return crate;
     }
 
@@ -68,149 +85,126 @@ public class CrateManager {
         this.crates.clear();
         Config config = this.plugin.getCratesConfig();
         config.reload();
-
-        ConfigurationSection root = config.getConfiguration();
-        // Legacy layout: everything nested under CRATES.
+        FileConfiguration root = config.getConfiguration();
         ConfigurationSection legacy = root.getConfigurationSection("CRATES");
         if (legacy != null) {
             for (String name : legacy.getKeys(false)) {
-                readCrate(name, legacy.getConfigurationSection(name));
+                this.readCrate(name, legacy.getConfigurationSection(name));
             }
         }
         for (String name : root.getKeys(false)) {
-            if (name.equalsIgnoreCase("CRATES")) {
-                continue;
-            }
-            readCrate(name, root.getConfigurationSection(name));
+            if (name.equalsIgnoreCase("CRATES")) continue;
+            this.readCrate(name, root.getConfigurationSection(name));
         }
         this.plugin.getLogger().info("Loaded " + this.crates.size() + " crate(s).");
     }
 
     private void readCrate(String name, ConfigurationSection section) {
+        ConfigurationSection items;
+        ConfigurationSection commands;
+        ConfigurationSection positions;
         if (section == null) {
             return;
         }
         Crate crate = new Crate(name);
         crate.setTitle(section.getString("TITLE", section.getString("DISPLAY-NAME", "&8" + name)));
         crate.setRows(section.getInt("ROWS", 3));
-
         for (String raw : section.getStringList("LOCATIONS")) {
             String normalized = Crate.normalizeLocation(raw);
-            if (normalized != null) {
-                crate.getLocations().add(normalized);
-            }
+            if (normalized == null) continue;
+            crate.getLocations().add(normalized);
         }
-
         ConfigurationSection rewards = section.getConfigurationSection("REWARDS");
         if (rewards != null) {
-            for (String rawKey : rewards.getKeys(false)) {
-                Integer key = parseInt(rawKey);
-                if (key == null) {
-                    continue;
-                }
-                ItemStack item = rewards.getItemStack(rawKey);
-                if (item != null && !item.getType().isAir()) {
-                    crate.getRewards().put(key, item);
-                }
+            for (Object rawKey : rewards.getKeys(false)) {
+                ItemStack item;
+                Integer key = this.parseInt((String)rawKey);
+                if (key == null || (item = rewards.getItemStack((String)rawKey)) == null || item.getType().isAir()) continue;
+                crate.getRewards().put(key, item);
             }
         }
-
-        ConfigurationSection positions = section.getConfigurationSection("POSITIONS");
-        if (positions != null) {
-            for (String rawKey : positions.getKeys(false)) {
-                Integer key = parseInt(rawKey);
-                if (key != null) {
-                    crate.getPositions().put(key, positions.getInt(rawKey, -1));
-                }
+        if ((positions = section.getConfigurationSection("POSITIONS")) != null) {
+            for (Object rawKey : positions.getKeys(false)) {
+                Integer key = this.parseInt((String)rawKey);
+                if (key == null) continue;
+                crate.getPositions().put(key, positions.getInt((String)rawKey, -1));
             }
         }
-
-        ConfigurationSection commands = section.getConfigurationSection("COMMANDS");
-        if (commands != null) {
+        ConfigurationSection chances = section.getConfigurationSection("CHANCES");
+        if (chances != null) {
+            for (String rawKey : chances.getKeys(false)) {
+                Integer key = this.parseInt(rawKey);
+                if (key == null) continue;
+                crate.getChances().put(key, Double.valueOf(chances.getDouble(rawKey, 1.0)));
+            }
+        }
+        if ((commands = section.getConfigurationSection("COMMANDS")) != null) {
             for (String rawKey : commands.getKeys(false)) {
-                Integer key = parseInt(rawKey);
-                if (key == null) {
-                    continue;
-                }
-                // A slot can hold a single command string or a list of them.
-                List<String> list = commands.getStringList(rawKey);
+                Integer key = this.parseInt(rawKey);
+                if (key == null) continue;
+                List list = commands.getStringList(rawKey);
                 if (list == null || list.isEmpty()) {
                     String single = commands.getString(rawKey, "");
-                    list = single == null || single.trim().isEmpty()
-                            ? new ArrayList<>() : new ArrayList<>(Arrays.asList(single));
+                    list = single == null || single.trim().isEmpty() ? new ArrayList() : new ArrayList((Collection)Arrays.asList(new String[]{single}));
                 }
-                crate.setCommands(key, list);
+                crate.setCommands(key, (List<String>)list);
             }
         }
-
-        // Legacy layout: ITEMS.<slot>.ITEM / .COMMANDS
-        ConfigurationSection items = section.getConfigurationSection("ITEMS");
-        if (items != null) {
+        if ((items = section.getConfigurationSection("ITEMS")) != null) {
             for (String rawKey : items.getKeys(false)) {
-                Integer key = parseInt(rawKey);
-                if (key == null) {
-                    continue;
-                }
+                Integer key = this.parseInt(rawKey);
+                if (key == null) continue;
                 ItemStack item = items.getItemStack(rawKey + ".ITEM");
                 if (item != null) {
                     crate.getRewards().put(key, item);
                     crate.getPositions().put(key, key);
                 }
-                crate.setCommands(key, items.getStringList(rawKey + ".COMMANDS"));
+                crate.setCommands(key, (List<String>)items.getStringList(rawKey + ".COMMANDS"));
             }
         }
-
-        if (crate.getRewards().isEmpty() && crate.getLocations().isEmpty()
-                && !section.contains("REWARDS") && !section.contains("TITLE")) {
-            // Not a crate section (some unrelated key), ignore it.
+        if (crate.getRewards().isEmpty() && crate.getLocations().isEmpty() && !section.contains("REWARDS") && !section.contains("TITLE")) {
             return;
         }
-
-        normalizeCommands(crate);
+        this.normalizeCommands(crate);
         this.crates.put(crate.getKey(), crate);
     }
 
-    /**
-     * COMMANDS can be keyed either by reward key or by the slot the reward is drawn on - the old
-     * plugin wrote both (Ruby stores its rewards as 1-5 but its commands as 11-15). Anything keyed
-     * by slot is moved onto the reward that occupies that slot, and stale keys are dropped.
-     */
     private void normalizeCommands(Crate crate) {
-        Map<Integer, List<String>> raw = new LinkedHashMap<>(crate.getCommands());
+        LinkedHashMap raw = new LinkedHashMap(crate.getCommands());
         crate.getCommands().clear();
-        for (Map.Entry<Integer, Integer> entry : crate.resolveSlots().entrySet()) {
-            int slot = entry.getKey();
-            int rewardKey = entry.getValue();
-            List<String> commands = raw.get(rewardKey);
+        for (Map.Entry entry : crate.resolveSlots().entrySet()) {
+            int slot = (Integer)entry.getKey();
+            int rewardKey = (Integer)entry.getValue();
+            List commands = (List)raw.get(rewardKey);
             if (commands == null || commands.isEmpty()) {
-                commands = raw.get(slot);
+                commands = (List)raw.get(slot);
             }
-            if (commands != null && !commands.isEmpty()) {
-                crate.setCommands(rewardKey, commands);
-            }
+            if (commands == null || commands.isEmpty()) continue;
+            crate.setCommands(rewardKey, (List<String>)commands);
         }
     }
 
     public void save() {
         Config config = this.plugin.getCratesConfig();
-        // Wipe every known crate section, then write them back in the original layout.
-        for (String key : new ArrayList<>(config.getConfiguration().getKeys(false))) {
+        for (String key : new ArrayList<String>(config.getConfiguration().getKeys(false))) {
             config.getConfiguration().set(key, null);
         }
         for (Crate crate : this.crates.values()) {
             String base = crate.getName();
             config.getConfiguration().set(base + ".TITLE", crate.getTitle());
             config.getConfiguration().set(base + ".ROWS", crate.getRows());
-            config.getConfiguration().set(base + ".LOCATIONS", new ArrayList<>(crate.getLocations()));
-
-            for (Map.Entry<Integer, ItemStack> entry : crate.getRewards().entrySet()) {
+            config.getConfiguration().set(base + ".LOCATIONS", new ArrayList(crate.getLocations()));
+            for (Map.Entry entry : crate.getRewards().entrySet()) {
                 String key = String.valueOf(entry.getKey());
                 config.getConfiguration().set(base + ".REWARDS." + key, entry.getValue());
-                Integer position = crate.getPositions().get(entry.getKey());
-                config.getConfiguration().set(base + ".POSITIONS." + key, position == null ? -1 : position);
-                List<String> commands = crate.getCommands(entry.getKey());
-                config.getConfiguration().set(base + ".COMMANDS." + key,
-                        commands.isEmpty() ? "" : (commands.size() == 1 ? commands.get(0) : commands));
+                Integer position = (Integer)crate.getPositions().get(entry.getKey());
+                config.getConfiguration().set(base + ".POSITIONS." + key, (position == null ? -1 : position));
+                List<String> commands = crate.getCommands((Integer)entry.getKey());
+                config.getConfiguration().set(base + ".COMMANDS." + key, commands.isEmpty() ? "" : (commands.size() == 1 ? commands.get(0) : commands));
+                Double chance = crate.getChances().get(entry.getKey());
+                if (chance != null) {
+                    config.getConfiguration().set(base + ".CHANCES." + key, chance);
+                }
             }
         }
         config.save();
@@ -218,14 +212,15 @@ public class CrateManager {
 
     private Integer parseInt(String raw) {
         try {
-            return Integer.parseInt(raw.trim());
-        } catch (NumberFormatException exception) {
+            return Integer.parseInt((String)raw.trim());
+        }
+        catch (NumberFormatException exception) {
             return null;
         }
     }
 
     public List<String> getCrateNames() {
-        List<String> names = new ArrayList<>();
+        ArrayList names = new ArrayList();
         for (Crate crate : this.crates.values()) {
             names.add(crate.getName());
         }

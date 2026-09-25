@@ -1,19 +1,35 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.lang.Math
+ *  java.lang.Object
+ *  java.lang.String
+ *  java.util.ArrayList
+ *  java.util.Arrays
+ *  java.util.Collection
+ *  java.util.List
+ *  org.bukkit.Material
+ *  org.bukkit.inventory.ItemFlag
+ *  org.bukkit.inventory.ItemStack
+ *  org.bukkit.inventory.meta.ItemMeta
+ */
 package net.havoc.crates.util;
 
+import java.lang.Math;
+import java.lang.Object;
+import java.lang.String;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import net.havoc.crates.util.CC;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-/**
- * Small fluent wrapper around ItemStack creation.
- */
 public final class ItemBuilder {
-
     private final ItemStack itemStack;
 
     public ItemBuilder(Material material) {
@@ -27,13 +43,13 @@ public final class ItemBuilder {
     public static ItemBuilder of(String materialName, Material fallback) {
         Material material = null;
         if (materialName != null) {
-            material = Material.matchMaterial(materialName.toUpperCase());
+            material = Material.matchMaterial((String)materialName.toUpperCase());
         }
         return new ItemBuilder(material == null ? fallback : material);
     }
 
     public ItemBuilder amount(int amount) {
-        this.itemStack.setAmount(Math.max(1, Math.min(64, amount)));
+        this.itemStack.setAmount(Math.max((int)1, (int)Math.min((int)64, (int)amount)));
         return this;
     }
 
@@ -55,16 +71,16 @@ public final class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder lore(String... lines) {
-        return lore(new ArrayList<>(Arrays.asList(lines)));
+    public ItemBuilder lore(String ... lines) {
+        return this.lore((List<String>)new ArrayList((Collection)Arrays.asList((Object[])lines)));
     }
 
     public ItemBuilder appendLore(List<String> lines) {
         ItemMeta meta = this.itemStack.getItemMeta();
         if (meta != null) {
-            List<String> lore = meta.getLore() == null ? new ArrayList<>() : new ArrayList<>(meta.getLore());
+            ArrayList lore = meta.getLore() == null ? new ArrayList() : new ArrayList((Collection)meta.getLore());
             lore.addAll(CC.translate(lines));
-            meta.setLore(lore);
+            meta.setLore((List)lore);
             this.itemStack.setItemMeta(meta);
         }
         return this;
@@ -73,7 +89,7 @@ public final class ItemBuilder {
     public ItemBuilder hideAttributes() {
         ItemMeta meta = this.itemStack.getItemMeta();
         if (meta != null) {
-            meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS);
+            meta.addItemFlags(new ItemFlag[]{ItemFlag.HIDE_ATTRIBUTES, ItemFlag.HIDE_ENCHANTS});
             this.itemStack.setItemMeta(meta);
         }
         return this;

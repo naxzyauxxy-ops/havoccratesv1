@@ -1,13 +1,20 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.lang.Object
+ *  org.bukkit.inventory.Inventory
+ *  org.bukkit.inventory.InventoryHolder
+ */
 package net.havoc.crates.menu;
 
+import java.lang.Object;
+import net.havoc.crates.menu.Menu;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 
-/**
- * Inventory holder used to identify our own menus.
- */
-public class MenuHolder implements InventoryHolder {
-
+public class MenuHolder
+implements InventoryHolder {
     private final Menu menu;
     private Inventory inventory;
 
@@ -23,7 +30,6 @@ public class MenuHolder implements InventoryHolder {
         this.inventory = inventory;
     }
 
-    @Override
     public Inventory getInventory() {
         return this.inventory;
     }

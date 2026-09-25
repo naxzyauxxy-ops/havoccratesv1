@@ -17,3 +17,12 @@
 #       ...
 #
 # /crates edit <crate> writes this file for you.
+#
+# Mystery present odds (optional). Weights, not percentages - a reward with no
+# entry weighs 1, so leaving CHANCES out entirely makes every reward equally likely:
+#
+#   Gold:
+#     CHANCES:
+#       '10': 50
+#       '11': 25
+#       '12': 25

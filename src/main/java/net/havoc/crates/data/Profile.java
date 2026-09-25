@@ -1,17 +1,28 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.lang.Integer
+ *  java.lang.Object
+ *  java.lang.String
+ *  java.util.HashMap
+ *  java.util.Iterator
+ *  java.util.Map
+ *  java.util.UUID
+ */
 package net.havoc.crates.data;
 
+import java.lang.Integer;
+import java.lang.Object;
+import java.lang.String;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * A player's virtual key balances, keyed by crate name.
- */
 public class Profile {
-
     private final UUID uuid;
-    private final Map<String, Integer> keys = new HashMap<>();
-    /** false = crate alert messages are silenced for this player */
+    private final Map<String, Integer> keys = new HashMap();
     private boolean alerts = true;
     private boolean dirty;
 
@@ -37,7 +48,7 @@ public class Profile {
     }
 
     public int getKeyAmount(String crate) {
-        Integer value = this.keys.get(crate.toLowerCase());
+        Integer value = (Integer)this.keys.get(crate.toLowerCase());
         return value == null ? 0 : value;
     }
 
@@ -52,24 +63,23 @@ public class Profile {
     }
 
     public void addKeys(String crate, int amount) {
-        setKeys(crate, getKeyAmount(crate) + amount);
+        this.setKeys(crate, this.getKeyAmount(crate) + amount);
     }
 
-    /**
-     * @return true when the keys were available and have been taken.
-     */
     public boolean takeKeys(String crate, int amount) {
-        int current = getKeyAmount(crate);
+        int current = this.getKeyAmount(crate);
         if (current < amount) {
             return false;
         }
-        setKeys(crate, current - amount);
+        this.setKeys(crate, current - amount);
         return true;
     }
 
     public int getTotalKeys() {
         int total = 0;
-        for (int value : this.keys.values()) {
+        Iterator iterator = this.keys.values().iterator();
+        while (iterator.hasNext()) {
+            int value = (Integer)iterator.next();
             total += value;
         }
         return total;

@@ -1,5 +1,33 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.lang.CharSequence
+ *  java.lang.Float
+ *  java.lang.NumberFormatException
+ *  java.lang.Object
+ *  java.lang.String
+ *  java.util.Arrays
+ *  java.util.List
+ *  org.bukkit.Bukkit
+ *  org.bukkit.command.CommandExecutor
+ *  org.bukkit.command.CommandSender
+ *  org.bukkit.command.PluginCommand
+ *  org.bukkit.command.TabCompleter
+ *  org.bukkit.entity.Player
+ *  org.bukkit.event.Listener
+ *  org.bukkit.plugin.Plugin
+ *  org.bukkit.plugin.java.JavaPlugin
+ */
 package net.havoc.crates;
 
+import java.lang.CharSequence;
+import java.lang.Float;
+import java.lang.NumberFormatException;
+import java.lang.Object;
+import java.lang.String;
+import java.util.Arrays;
+import java.util.List;
 import net.havoc.crates.commands.AlertsCommand;
 import net.havoc.crates.commands.CrateCommand;
 import net.havoc.crates.commands.CratesCommand;
@@ -14,68 +42,55 @@ import net.havoc.crates.placeholder.CratesPlaceholder;
 import net.havoc.crates.util.CC;
 import net.havoc.crates.util.Config;
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.command.PluginCommand;
+import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
+import org.bukkit.event.Listener;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.Arrays;
-import java.util.List;
-
-/**
- * HavocCrates - donut style crates with bulk buying.
- */
-public class CratesPlugin extends JavaPlugin {
-
+public class CratesPlugin
+extends JavaPlugin {
     private static CratesPlugin instance;
-
     private Config mainConfig;
     private Config cratesConfig;
     private CrateManager crateManager;
     private ProfileManager profileManager;
+    private static final List<String> DEFAULT_TOGGLEABLE;
+    private static final List<String> DEFAULT_ALWAYS_SHOW;
 
     public static CratesPlugin getInstance() {
         return instance;
     }
 
-    @Override
     public void onEnable() {
         instance = this;
-
         this.mainConfig = new Config(this, "config.yml");
         this.cratesConfig = new Config(this, "crates.yml");
         this.profileManager = new ProfileManager(this);
         this.crateManager = new CrateManager(this);
-
-        Bukkit.getPluginManager().registerEvents(new MenuListener(), this);
-        Bukkit.getPluginManager().registerEvents(new ProfileListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new CrateInteractListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new CrateEditListener(this), this);
-
-        register("crates", new CratesCommand(this));
-        register("crate", new CrateCommand(this));
-        register("cratealerts", new AlertsCommand(this));
-        register("key", new KeyCommand(this));
-
+        Bukkit.getPluginManager().registerEvents((Listener)new MenuListener(), (Plugin)this);
+        Bukkit.getPluginManager().registerEvents((Listener)new ProfileListener(this), (Plugin)this);
+        Bukkit.getPluginManager().registerEvents((Listener)new CrateInteractListener(this), (Plugin)this);
+        Bukkit.getPluginManager().registerEvents((Listener)new CrateEditListener(this), (Plugin)this);
+        this.register("crates", new CratesCommand(this));
+        this.register("crate", new CrateCommand(this));
+        this.register("cratealerts", new AlertsCommand(this));
+        this.register("key", new KeyCommand(this));
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new CratesPlaceholder(this).register();
-            getLogger().info("Hooked into PlaceholderAPI.");
+            this.getLogger().info("Hooked into PlaceholderAPI.");
         }
-
-        // Players already online during a reload still need a profile.
         Bukkit.getOnlinePlayers().forEach(player -> this.profileManager.loadAsync(player.getUniqueId()));
-
         if (!this.mainConfig.getConfiguration().contains("ALERTS")) {
-            getLogger().info("config.yml has no ALERTS section - using the built-in defaults "
-                    + "(REWARD_RECEIVED, INVENTORY_PARTIAL, RECEIVED_KEYS can be silenced with /cratealerts).");
+            this.getLogger().info("config.yml has no ALERTS section - using the built-in defaults (REWARD_RECEIVED, INVENTORY_PARTIAL, RECEIVED_KEYS can be silenced with /cratealerts).");
         }
-        getLogger().info("HavocCrates v" + getDescription().getVersion() + " enabled.");
+        this.getLogger().info("HavocCrates v" + this.getDescription().getVersion() + " enabled.");
     }
 
-    @Override
     public void onDisable() {
-        // Crates are only ever written by an admin action, so nothing is saved here -
-        // that keeps a hand edited crates.yml exactly as it is.
         Bukkit.getOnlinePlayers().forEach(player -> player.closeInventory());
         if (this.profileManager != null) {
             this.profileManager.shutdown();
@@ -83,14 +98,14 @@ public class CratesPlugin extends JavaPlugin {
     }
 
     private void register(String name, Object executor) {
-        PluginCommand command = getCommand(name);
+        PluginCommand command = this.getCommand(name);
         if (command == null) {
-            getLogger().warning("Command /" + name + " is missing from plugin.yml");
+            this.getLogger().warning("Command /" + name + " is missing from plugin.yml");
             return;
         }
-        command.setExecutor((org.bukkit.command.CommandExecutor) executor);
-        if (executor instanceof org.bukkit.command.TabCompleter) {
-            command.setTabCompleter((org.bukkit.command.TabCompleter) executor);
+        command.setExecutor((CommandExecutor)executor);
+        if (executor instanceof TabCompleter) {
+            command.setTabCompleter((TabCompleter)executor);
         }
     }
 
@@ -115,101 +130,101 @@ public class CratesPlugin extends JavaPlugin {
         return this.profileManager;
     }
 
-    /**
-     * Sends a message from the MESSAGES section, applying %placeholder% pairs.
-     */
-    public void message(CommandSender sender, String key, String... replacements) {
-        if (isSilenced(sender, key)) {
+    public void message(CommandSender sender, String key, String ... replacements) {
+        if (this.isSilenced(sender, key)) {
             return;
         }
-        messageAlways(sender, key, replacements);
+        this.messageAlways(sender, key, replacements);
     }
 
-    /**
-     * Sends a message even when the player has crate alerts turned off.
-     */
-    public void messageAlways(CommandSender sender, String key, String... replacements) {
+    public void messageAlways(CommandSender sender, String key, String ... replacements) {
         String message = this.mainConfig.getConfiguration().getString("MESSAGES." + key);
         if (message == null || message.isEmpty()) {
             return;
         }
-        for (int index = 0; index + 1 < replacements.length; index += 2) {
-            message = message.replace(replacements[index], replacements[index + 1]);
+        int index = 0;
+        while (index + 1 < replacements.length) {
+            message = message.replace((CharSequence)replacements[index], (CharSequence)replacements[index + 1]);
+            index += 2;
         }
         sender.sendMessage(CC.translate(message));
     }
 
-    /**
-     * Messages a player can silence with /cratealerts, used when the config has no ALERTS section
-     * (an older config.yml would otherwise silence nothing at all).
-     */
-    private static final List<String> DEFAULT_TOGGLEABLE =
-            Arrays.asList("REWARD_RECEIVED", "INVENTORY_PARTIAL", "RECEIVED_KEYS");
-
-    /**
-     * Never silenced, whatever the config says - a player must always learn why something failed.
-     */
-    private static final List<String> DEFAULT_ALWAYS_SHOW = Arrays.asList(
-            "NOT_ENOUGH_KEYS", "INVENTORY_FULL", "NO_PERMISSION", "PLAYERS_ONLY",
-            "PLAYER_NOT_FOUND", "NO_CRATE_FOUND", "NO_CRATES_FOUND", "CRATE_PROTECTED",
-            "ALERTS_ENABLED", "ALERTS_DISABLED");
-
-    /**
-     * A message listed under ALERTS.TOGGLEABLE is skipped for players who ran /cratealerts off.
-     * ALERTS.TOGGLEABLE may also be a single "*" to silence everything that is not an error.
-     */
     private boolean isSilenced(CommandSender sender, String key) {
         if (!(sender instanceof Player) || this.profileManager == null) {
             return false;
         }
-        if (this.profileManager.getProfile((Player) sender).isAlerts()) {
+        if (this.profileManager.getProfile((Player)sender).isAlerts()) {
             return false;
         }
-
         List<String> alwaysShow = this.mainConfig.getConfiguration().getStringList("ALERTS.ALWAYS-SHOW");
         if (alwaysShow == null || alwaysShow.isEmpty()) {
             alwaysShow = DEFAULT_ALWAYS_SHOW;
         }
-        if (contains(alwaysShow, key)) {
+        if (this.contains(alwaysShow, key)) {
             return false;
         }
-
         List<String> toggleable = this.mainConfig.getConfiguration().getStringList("ALERTS.TOGGLEABLE");
         if (toggleable == null || toggleable.isEmpty()) {
             toggleable = DEFAULT_TOGGLEABLE;
         }
-        return contains(toggleable, "*") || contains(toggleable, key);
+        return this.contains(toggleable, "*") || this.contains(toggleable, key);
     }
 
-    /**
-     * The toggleable list actually in use, and whether it came from config.yml or the defaults.
-     */
     public List<String> getToggleableMessages() {
-        List<String> toggleable = this.mainConfig.getConfiguration().getStringList("ALERTS.TOGGLEABLE");
+        List toggleable = this.mainConfig.getConfiguration().getStringList("ALERTS.TOGGLEABLE");
         return toggleable == null || toggleable.isEmpty() ? DEFAULT_TOGGLEABLE : toggleable;
     }
 
     public List<String> getAlwaysShownMessages() {
-        List<String> always = this.mainConfig.getConfiguration().getStringList("ALERTS.ALWAYS-SHOW");
+        List always = this.mainConfig.getConfiguration().getStringList("ALERTS.ALWAYS-SHOW");
         return always == null || always.isEmpty() ? DEFAULT_ALWAYS_SHOW : always;
     }
 
     public boolean wouldSilence(CommandSender sender, String key) {
-        return isSilenced(sender, key);
+        return this.isSilenced(sender, key);
     }
 
     private boolean contains(List<String> list, String value) {
         for (String entry : list) {
-            if (entry != null && entry.trim().equalsIgnoreCase(value)) {
-                return true;
-            }
+            if (entry == null || !entry.trim().equalsIgnoreCase(value)) continue;
+            return true;
         }
         return false;
     }
 
     /**
-     * Plays a sound written as "sound", "sound|volume" or "sound|volume|pitch".
+     * Spawns a particle burst written as "PARTICLE", "PARTICLE|count" or "PARTICLE|count|spread".
+     * An unknown particle name is logged and ignored rather than breaking the purchase.
      */
+    public void playEffect(Player player, String path, String def) {
+        String raw = this.mainConfig.getString(path, def);
+        if (raw == null || raw.trim().isEmpty() || raw.equalsIgnoreCase("none")) {
+            return;
+        }
+        String[] parts = raw.split("\\|");
+        int count = 25;
+        double spread = 0.6;
+        try {
+            if (parts.length > 1) {
+                count = Integer.parseInt(parts[1].trim());
+            }
+            if (parts.length > 2) {
+                spread = Double.parseDouble(parts[2].trim());
+            }
+        } catch (NumberFormatException exception) {
+            this.getLogger().warning("Bad particle count/spread in " + path + ": " + raw);
+        }
+        try {
+            org.bukkit.Particle particle = org.bukkit.Particle.valueOf(
+                    parts[0].trim().toUpperCase(java.util.Locale.ROOT));
+            player.getWorld().spawnParticle(particle, player.getLocation().add(0.0, 1.0, 0.0),
+                    count, spread, spread, spread, 0.0);
+        } catch (IllegalArgumentException exception) {
+            this.getLogger().warning("Unknown particle in " + path + ": " + parts[0]);
+        }
+    }
+
     public void playSound(Player player, String path, String def) {
         String raw = this.mainConfig.getString(path, def);
         if (raw == null || raw.trim().isEmpty() || raw.equalsIgnoreCase("none")) {
@@ -221,24 +236,25 @@ public class CratesPlugin extends JavaPlugin {
         float pitch = 1.0f;
         try {
             if (parts.length > 1) {
-                volume = Float.parseFloat(parts[1].trim());
+                volume = Float.parseFloat((String)parts[1].trim());
             }
             if (parts.length > 2) {
-                pitch = Float.parseFloat(parts[2].trim());
+                pitch = Float.parseFloat((String)parts[2].trim());
             }
-        } catch (NumberFormatException exception) {
-            getLogger().warning("Bad sound volume/pitch in " + path + ": " + raw);
+        }
+        catch (NumberFormatException exception) {
+            this.getLogger().warning("Bad sound volume/pitch in " + path + ": " + raw);
         }
         player.playSound(player.getLocation(), sound, volume, pitch);
     }
 
-    /**
-     * "ON" / "OFF" for placeholders and settings menus.
-     */
     public String getAlertStatus(Player player) {
         boolean enabled = this.profileManager.getProfile(player).isAlerts();
-        return CC.translate(enabled
-                ? this.mainConfig.getString("ALERTS.STATUS-ENABLED", "&aON")
-                : this.mainConfig.getString("ALERTS.STATUS-DISABLED", "&cOFF"));
+        return CC.translate(enabled ? this.mainConfig.getString("ALERTS.STATUS-ENABLED", "&aON") : this.mainConfig.getString("ALERTS.STATUS-DISABLED", "&cOFF"));
+    }
+
+    static {
+        DEFAULT_TOGGLEABLE = Arrays.asList(new String[]{"REWARD_RECEIVED", "INVENTORY_PARTIAL", "RECEIVED_KEYS"});
+        DEFAULT_ALWAYS_SHOW = Arrays.asList(new String[]{"NOT_ENOUGH_KEYS", "INVENTORY_FULL", "NO_PERMISSION", "PLAYERS_ONLY", "PLAYER_NOT_FOUND", "NO_CRATE_FOUND", "NO_CRATES_FOUND", "CRATE_PROTECTED", "ALERTS_ENABLED", "ALERTS_DISABLED"});
     }
 }

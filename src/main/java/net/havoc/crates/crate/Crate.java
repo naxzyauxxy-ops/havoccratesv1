@@ -1,8 +1,32 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.lang.Integer
+ *  java.lang.Math
+ *  java.lang.NumberFormatException
+ *  java.lang.Object
+ *  java.lang.String
+ *  java.util.ArrayList
+ *  java.util.HashMap
+ *  java.util.HashSet
+ *  java.util.LinkedHashMap
+ *  java.util.LinkedHashSet
+ *  java.util.List
+ *  java.util.Map
+ *  java.util.Map$Entry
+ *  java.util.Set
+ *  java.util.TreeMap
+ *  org.bukkit.Location
+ *  org.bukkit.inventory.ItemStack
+ */
 package net.havoc.crates.crate;
 
-import org.bukkit.Location;
-import org.bukkit.inventory.ItemStack;
-
+import java.lang.Integer;
+import java.lang.Math;
+import java.lang.NumberFormatException;
+import java.lang.Object;
+import java.lang.String;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -12,38 +36,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import org.bukkit.Location;
+import org.bukkit.inventory.ItemStack;
 
-/**
- * A crate, matching the layout used by crates.yml:
- *
- * <pre>
- * Common:
- *   TITLE: '&8ᴄʜᴏᴏsᴇ 1 ɪᴛᴇᴍ'
- *   ROWS: 3
- *   LOCATIONS:
- *   - world,99,-21,70
- *   COMMANDS:
- *     '10': 'give {player} diamond'
- *   POSITIONS:
- *     '10': -1          # -1 = auto centered
- *   REWARDS:
- *     '10': &lt;ItemStack&gt;
- * </pre>
- */
 public class Crate {
-
     private final String name;
     private String title;
     private int rows = 3;
-
-    /** reward key -> item */
-    private final Map<Integer, ItemStack> rewards = new TreeMap<>();
-    /** reward key -> menu slot, -1 (or missing) means auto centered */
-    private final Map<Integer, Integer> positions = new HashMap<>();
-    /** reward key -> console commands */
-    private final Map<Integer, List<String>> commands = new HashMap<>();
-    /** "world,x,y,z" */
-    private final Set<String> locations = new LinkedHashSet<>();
+    private final Map<Integer, ItemStack> rewards = new TreeMap();
+    private final Map<Integer, Integer> positions = new HashMap();
+    private final Map<Integer, List<String>> commands = new HashMap();
+    /** reward key -> weight used by the mystery present roll */
+    private final Map<Integer, Double> chances = new HashMap<Integer, Double>();
+    private final Set<String> locations = new LinkedHashSet();
 
     public Crate(String name) {
         this.name = name;
@@ -66,7 +71,6 @@ public class Crate {
         this.title = title;
     }
 
-    /** Kept for messages that want a nice crate name. */
     public String getDisplayName() {
         return this.name;
     }
@@ -76,7 +80,7 @@ public class Crate {
     }
 
     public void setRows(int rows) {
-        this.rows = Math.max(1, Math.min(6, rows));
+        this.rows = Math.max((int)1, (int)Math.min((int)6, (int)rows));
     }
 
     public int getSize() {
@@ -96,17 +100,16 @@ public class Crate {
     }
 
     public List<String> getCommands(int rewardKey) {
-        List<String> list = this.commands.get(rewardKey);
-        return list == null ? new ArrayList<>() : list;
+        List list = (List)this.commands.get(rewardKey);
+        return list == null ? new ArrayList() : list;
     }
 
     public void setCommands(int rewardKey, List<String> list) {
-        List<String> cleaned = new ArrayList<>();
+        ArrayList cleaned = new ArrayList();
         if (list != null) {
             for (String line : list) {
-                if (line != null && !line.trim().isEmpty()) {
-                    cleaned.add(line);
-                }
+                if (line == null || line.trim().isEmpty()) continue;
+                cleaned.add(line);
             }
         }
         if (cleaned.isEmpty()) {
@@ -116,26 +119,65 @@ public class Crate {
         }
     }
 
+    public Map<Integer, Double> getChances() {
+        return this.chances;
+    }
+
+    /**
+     * Weight of one reward in the present roll. Rewards with no CHANCES entry weigh 1, so a
+     * crate with no chances at all rolls every reward evenly.
+     */
+    public double getChance(int rewardKey) {
+        Double value = this.chances.get(rewardKey);
+        return value == null ? 1.0 : Math.max(0.0, value.doubleValue());
+    }
+
+    public double getTotalWeight() {
+        double total = 0.0;
+        for (Integer key : this.rewards.keySet()) {
+            total += this.getChance(key.intValue());
+        }
+        return total;
+    }
+
+    /**
+     * Picks a reward at random, weighted by CHANCES.
+     *
+     * @return the reward key, or null when the crate has no rewards.
+     */
+    public Integer rollReward(java.util.Random random) {
+        double total = this.getTotalWeight();
+        if (this.rewards.isEmpty() || total <= 0.0) {
+            return null;
+        }
+        double roll = random.nextDouble() * total;
+        Integer last = null;
+        for (Integer key : this.rewards.keySet()) {
+            last = key;
+            roll -= this.getChance(key.intValue());
+            if (roll <= 0.0) {
+                return key;
+            }
+        }
+        return last;
+    }
+
     public Set<String> getLocations() {
         return this.locations;
     }
 
     public void addLocation(Location location) {
-        this.locations.add(serialize(location));
+        this.locations.add(Crate.serialize(location));
     }
 
     public void removeLocation(Location location) {
-        this.locations.remove(serialize(location));
+        this.locations.remove(Crate.serialize(location));
     }
 
     public static String serialize(Location location) {
-        return location.getWorld().getName() + "," + location.getBlockX() + ","
-                + location.getBlockY() + "," + location.getBlockZ();
+        return location.getWorld().getName() + "," + location.getBlockX() + "," + location.getBlockY() + "," + location.getBlockZ();
     }
 
-    /**
-     * Accepts both "world,x,y,z" and the older "world;x;y;z".
-     */
     public static String normalizeLocation(String raw) {
         if (raw == null) {
             return null;
@@ -145,78 +187,60 @@ public class Crate {
             return null;
         }
         try {
-            return parts[0].trim() + "," + Integer.parseInt(parts[1].trim()) + ","
-                    + Integer.parseInt(parts[2].trim()) + "," + Integer.parseInt(parts[3].trim());
-        } catch (NumberFormatException exception) {
+            return parts[0].trim() + "," + Integer.parseInt((String)parts[1].trim()) + "," + Integer.parseInt((String)parts[2].trim()) + "," + Integer.parseInt((String)parts[3].trim());
+        }
+        catch (NumberFormatException exception) {
             return null;
         }
     }
 
-    /**
-     * Works out where every reward is drawn.
-     *
-     * <p>A reward with an explicit POSITION uses it; everything else is centered, exactly like the
-     * old menus (7 rewards in a 3 row menu land on 10-16, 5 land on 11-15, and so on).
-     *
-     * @return menu slot -> reward key
-     */
     public Map<Integer, Integer> resolveSlots() {
-        Map<Integer, Integer> slotToKey = new LinkedHashMap<>();
-        int size = getSize();
-        Set<Integer> taken = new HashSet<>();
-        List<Integer> auto = new ArrayList<>();
-
-        for (Map.Entry<Integer, ItemStack> entry : this.rewards.entrySet()) {
-            ItemStack item = entry.getValue();
-            if (item == null || item.getType().isAir()) {
-                continue;
-            }
-            Integer position = this.positions.get(entry.getKey());
+        LinkedHashMap slotToKey = new LinkedHashMap();
+        int size = this.getSize();
+        HashSet taken = new HashSet();
+        ArrayList auto = new ArrayList();
+        for (Map.Entry entry : this.rewards.entrySet()) {
+            ItemStack item = (ItemStack)entry.getValue();
+            if (item == null || item.getType().isAir()) continue;
+            Integer position = (Integer)this.positions.get(entry.getKey());
             if (position != null && position >= 0 && position < size && !taken.contains(position)) {
                 taken.add(position);
-                slotToKey.put(position, entry.getKey());
-            } else {
-                auto.add(entry.getKey());
+                slotToKey.put(position, ((Integer)entry.getKey()));
+                continue;
             }
+            auto.add(((Integer)entry.getKey()));
         }
-
-        List<Integer> slots = centeredSlots(auto.size(), size, taken);
-        for (int index = 0; index < auto.size() && index < slots.size(); index++) {
-            slotToKey.put(slots.get(index), auto.get(index));
+        List<Integer> slots = Crate.centeredSlots(auto.size(), size, (Set<Integer>)taken);
+        for (int index = 0; index < auto.size() && index < slots.size(); ++index) {
+            slotToKey.put(((Integer)slots.get(index)), ((Integer)auto.get(index)));
         }
         return slotToKey;
     }
 
-    /**
-     * Builds a centered block of slots for {@code count} items.
-     */
     private static List<Integer> centeredSlots(int count, int size, Set<Integer> taken) {
-        List<Integer> slots = new ArrayList<>();
+        int inRow;
+        ArrayList slots = new ArrayList();
         if (count <= 0) {
             return slots;
         }
-        int rows = Math.max(1, size / 9);
-        int rowsNeeded = Math.min(rows, (int) Math.ceil(count / 9.0));
+        int rows = Math.max((int)1, (int)(size / 9));
+        int rowsNeeded = Math.min((int)rows, (int)((int)Math.ceil((double)((double)count / 9.0))));
         int startRow = (rows - rowsNeeded) / 2;
         int remaining = count;
-        for (int row = 0; row < rowsNeeded && remaining > 0; row++) {
-            int inRow = Math.min(9, (int) Math.ceil((double) remaining / (rowsNeeded - row)));
+        for (int row = 0; row < rowsNeeded && remaining > 0; remaining -= inRow, ++row) {
+            inRow = Math.min((int)9, (int)((int)Math.ceil((double)((double)remaining / (double)(rowsNeeded - row)))));
             int startColumn = (9 - inRow) / 2;
-            for (int column = 0; column < inRow; column++) {
+            for (int column = 0; column < inRow; ++column) {
                 int slot = (startRow + row) * 9 + startColumn + column;
-                if (slot < size && !taken.contains(slot)) {
-                    slots.add(slot);
-                    taken.add(slot);
-                }
-            }
-            remaining -= inRow;
-        }
-        // If explicit positions stole some of the centered slots, top up with whatever is free.
-        for (int slot = 0; slot < size && slots.size() < count; slot++) {
-            if (!taken.contains(slot)) {
+                if (slot >= size || taken.contains(slot)) continue;
                 slots.add(slot);
                 taken.add(slot);
             }
+        }
+        for (int slot = 0; slot < size && slots.size() < count; ++slot) {
+            if (taken.contains(slot)) continue;
+            slots.add(slot);
+            taken.add(slot);
         }
         return slots;
     }

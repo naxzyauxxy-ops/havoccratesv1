@@ -1,17 +1,20 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.lang.Object
+ */
 package net.havoc.crates.data.storage;
 
+import java.lang.Object;
 import net.havoc.crates.data.Profile;
 
-/**
- * Backend used to persist key balances.
- */
 public interface KeyStorage {
+    public void init();
 
-    void init();
+    public void load(Profile var1);
 
-    void load(Profile profile);
+    public void save(Profile var1);
 
-    void save(Profile profile);
-
-    void close();
+    public void close();
 }

@@ -1,17 +1,26 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.io.File
+ *  java.io.IOException
+ *  java.lang.Object
+ *  java.lang.String
+ *  org.bukkit.configuration.file.FileConfiguration
+ *  org.bukkit.configuration.file.YamlConfiguration
+ *  org.bukkit.plugin.java.JavaPlugin
+ */
 package net.havoc.crates.util;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.Object;
+import java.lang.String;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.io.File;
-import java.io.IOException;
-
-/**
- * Thin wrapper over a YAML file living inside the plugin folder.
- */
 public class Config {
-
     private final JavaPlugin plugin;
     private final String name;
     private final File file;
@@ -32,12 +41,13 @@ public class Config {
                     if (!this.file.createNewFile()) {
                         plugin.getLogger().warning("Could not create " + this.name);
                     }
-                } catch (IOException exception) {
+                }
+                catch (IOException exception) {
                     plugin.getLogger().severe("Could not create " + this.name + ": " + exception.getMessage());
                 }
             }
         }
-        this.configuration = YamlConfiguration.loadConfiguration(this.file);
+        this.configuration = YamlConfiguration.loadConfiguration((File)this.file);
     }
 
     public FileConfiguration getConfiguration() {
@@ -45,13 +55,14 @@ public class Config {
     }
 
     public void reload() {
-        this.configuration = YamlConfiguration.loadConfiguration(this.file);
+        this.configuration = YamlConfiguration.loadConfiguration((File)this.file);
     }
 
     public void save() {
         try {
             this.configuration.save(this.file);
-        } catch (IOException exception) {
+        }
+        catch (IOException exception) {
             this.plugin.getLogger().severe("Could not save " + this.name + ": " + exception.getMessage());
         }
     }

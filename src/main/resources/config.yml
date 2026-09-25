@@ -1,16 +1,12 @@
 # ==========================================================
-#  HavocCrates
+#  HavocCrates  ❄  ᴄʜʀɪꜱᴛᴍᴀꜱ ᴇᴅɪᴛɪᴏɴ  ❄
 #
 #  Crate menus keep the alignment from crates.yml: each crate
 #  uses its own TITLE and ROWS, rewards with a POSITION land
-#  on that slot and the rest are centered (7 rewards -> 10-16
-#  of a 3 row menu, 5 -> 11-15, 2 -> 12-13).
+#  on that slot and the rest are centered.
 #
-#  Left click a reward  -> buy 1
-#  Right click a reward -> buy a full stack (capped by your
-#                          keys and by RESTRICTIONS)
-#  Unstackable rewards (armour, tools) are handed over as
-#  separate items, so a bulk buy fills your inventory.
+#  Left click a reward  -> unwrap 1
+#  Right click a reward -> unwrap a full stack
 # ==========================================================
 
 DATABASE:
@@ -24,42 +20,36 @@ DATABASE:
 
 CRATE-VIEW-MENU:
   # Only used when a crate has no TITLE of its own.
-  TITLE: "%crate%"
+  TITLE: "&c❄ &a%crate% &c❄"
   PLACEHOLDER: true
-  PLACEHOLDER-MATERIAL: "GRAY_STAINED_GLASS_PANE"
+  PLACEHOLDER-MATERIAL: "GREEN_STAINED_GLASS_PANE"
   PLACEHOLDER-NAME: " "
-  # Appended under each reward. Lines containing %stack% are hidden for single purchase items.
   ITEM-LORE:
     - ""
-    - "&#FF5555▶ &cLeft click &7to buy &f%each%"
-    - "&#FF5555▶ &cRight click &7to buy &f%items%"
+    - "&c✦ &aLeft click &7to unwrap &f%each%"
+    - "&c✦ &aRight click &7to unwrap &f%items%"
     - ""
-    - "&7Your keys: &c%keys%"
+    - "&7Your keys&8: &c%keys%"
 
-# Players can silence the crate messages with /cratealerts (aliases: /togglecratealerts,
-# /cratemessages). Only the messages listed under TOGGLEABLE are affected - errors such as
-# NOT_ENOUGH_KEYS and INVENTORY_FULL always come through.
-#
-# Placeholders for a settings menu or scoreboard:
-#   %havoccrates_alerts_status%  -> ON / OFF (the two strings below)
-#   %havoccrates_alerts%         -> true / false
-# Sounds are written as "sound", "sound|volume" or "sound|volume|pitch". Use "none" to mute one.
+# Sounds are written as "sound", "sound|volume" or "sound|volume|pitch". "none" mutes one.
 SOUNDS:
-  BUTTON-CLICK: "minecraft:block.bubble_column.bubble_pop|0.8|1.2"
-  PURCHASE: "minecraft:entity.player.levelup|1.0|1.0"
-  ERROR: "minecraft:entity.villager.no|1.0|1.0"
+  # Sleigh bells on every button.
+  BUTTON-CLICK: "minecraft:block.note_block.bell|0.7|1.6"
+  PURCHASE: "minecraft:block.note_block.chime|1.0|1.4"
+  ERROR: "minecraft:block.note_block.didgeridoo|0.8|0.6"
+
+# Particle burst on a successful purchase: "PARTICLE", "PARTICLE|count" or "PARTICLE|count|spread".
+EFFECTS:
+  PURCHASE: "SNOWFLAKE|35|0.6"
 
 ALERTS:
-  # Default for a player who has never touched the setting.
   DEFAULT: true
   STATUS-ENABLED: "&aON"
   STATUS-DISABLED: "&cOFF"
-  # Messages /cratealerts off will hide. Use a single "*" to hide every non-error message.
   TOGGLEABLE:
     - REWARD_RECEIVED
     - INVENTORY_PARTIAL
     - RECEIVED_KEYS
-  # Never hidden, whatever is listed above.
   ALWAYS-SHOW:
     - NOT_ENOUGH_KEYS
     - INVENTORY_FULL
@@ -72,71 +62,94 @@ ALERTS:
     - ALERTS_ENABLED
     - ALERTS_DISABLED
 
-# /crate [crate] opens a crate menu from anywhere in the world.
-#   /crate                -> lists the crates and your key count for each
-#   /crate Rare           -> opens the Rare crate
-#   /crate Rare <player>  -> opens it for someone else (needs havoccrates.admin)
 CRATE-COMMAND:
-  SOUND: "minecraft:block.chest.open|1.0|1.0"
-  # true -> a player also needs havoccrates.crate.<crate> for that specific crate
+  SOUND: "minecraft:block.note_block.bell|0.8|1.2"
   PER-CRATE-PERMISSION: false
-  # true -> the menu only opens when the player holds at least one key for that crate
   REQUIRE-KEYS: false
 
-CONFIRM-MENU:
-  TITLE: "&8ᴄᴏɴꜰɪʀᴍ ʏᴏᴜʀ ᴘᴜʀᴄʜᴀꜱᴇ"
-  # 54 = six rows. The layout below is built for it:
-  #
-  #   row 1                    your keys (13)
-  #   row 2   -64 -10 -1 (19-21)   ITEM (22)   +1 +10 set 64 (23-25)
-  #   row 4      CANCEL (37-39)              CONFIRM (41-43)
-  #
-  SIZE: 54
-  # Where the reward preview sits. Its stack size follows the amount you picked.
-  ITEM-SLOT: 22
-  # Hard ceiling for every purchase, before RESTRICTIONS are applied.
+# ==========================================================
+#  ❄  ᴍʏꜱᴛᴇʀʏ ᴘʀᴇꜱᴇɴᴛ  ❄
+#  A present sits in every crate menu. One key opens it and
+#  hands out ONE random reward from that crate.
+#
+#  Odds live in crates.yml under each crate's CHANCES, keyed
+#  by the same reward key as REWARDS:
+#
+#    Gold:
+#      CHANCES:
+#        '10': 50     # weight, not a percentage
+#        '11': 25
+#        '12': 25
+#
+#  A reward with no CHANCES entry weighs 1, so a crate with
+#  no CHANCES at all rolls every reward evenly. The lore's
+#  %chances% line turns the weights into percentages.
+# ==========================================================
+PRESENT:
+  ENABLED: true
+  MATERIAL: "RED_SHULKER_BOX"
+  NAME: "&c❄ &aᴍʏꜱᴛᴇʀʏ ᴘʀᴇꜱᴇɴᴛ &c❄"
+  # -1 = auto: centered on the first row that has no rewards in it.
+  SLOT: -1
+  # "ALL", or list the crates that get a present: ["Gold", "Rare"]
+  CRATES:
+    - "ALL"
+  # Most presents that can be opened at once.
   MAX-AMOUNT: 64
-  # A reward saved in crates.yml with a stack size (Gold = 16 spawners, Loot = 64 blocks) hands
-  # over that whole stack for one key.
-  #   true  -> MAX_QUANTITY below counts ITEMS, so SPAWNER: 16 with a 16 spawner reward = 1 buy
-  #   false -> MAX_QUANTITY counts purchases, so SPAWNER: 16 would allow 16 x 16 = 256 spawners
+  # Show the odds in the lore where %chances% sits.
+  SHOW-CHANCES: true
+  CHANCE-LINE: "&8 ▪ &f%item% &8» &a%chance%%"
+  CONFIRM-TITLE: "&c❄ &aᴏᴘᴇɴ ʏᴏᴜʀ ᴘʀᴇꜱᴇɴᴛꜱ &c❄"
+  SOUND: "minecraft:block.note_block.chime|1.0|1.6"
+  # How each rolled gift is listed in the chat summary.
+  REWARD-ENTRY: "&a%amount%x %item%"
+  REWARD-SEPARATOR: "&7, "
+  LORE:
+    - ""
+    - "&7One key &8» &7one random gift."
+    - ""
+    - "&a❅ &7Inside this present&8:"
+    - "%chances%"
+    - ""
+    - "&c✦ &aLeft click &7to open &f1"
+    - "&c✦ &aRight click &7to open &f%stack%"
+    - ""
+    - "&7Your keys&8: &c%keys%"
+
+CONFIRM-MENU:
+  TITLE: "&c❄ &aᴄᴏɴꜰɪʀᴍ ʏᴏᴜʀ ɢɪꜰᴛ &c❄"
+  SIZE: 54
+  ITEM-SLOT: 22
+  MAX-AMOUNT: 64
   RESTRICTIONS-IN-ITEMS: true
-  # A reward slot that has COMMANDS in crates.yml is treated as a preview: the command hands out
-  # the real reward, so the icon itself is NOT put in the inventory (Ruby shows a netherite
-  # pickaxe but gives a voyager amethyst pickaxe). Set to false to give the icon as well.
   COMMANDS-REPLACE-ITEM: true
-  # Hides a quantity button when clicking it would not change anything, so "Remove 64" only shows
-  # once you are above 64 and "Add 10" disappears at the limit. Set to false to always show them.
   HIDE-UNUSABLE-BUTTONS: true
-  # true  -> anything that does not fit is dropped at your feet
-  # false -> nothing is dropped: the inventory is filled with as many as fit and you are only
-  #          charged for those (existing items are never replaced)
-  DROP-OVERFLOW: true
-  SOUND: "minecraft:entity.player.levelup|1.0|1.0"
+  DROP-OVERFLOW: false
+  SOUND: "minecraft:block.note_block.chime|1.0|1.4"
   ITEM-LORE:
     - ""
-    - "&8▪ &7Amount &8» &f%amount%"
-    - "&8▪ &7You get &8» &f%items% &7(&f%each% &7each)"
-    - "&8▪ &7Cost &8» &c%cost% &7key(s)"
-    - "&8▪ &7You have &8» &c%keys% &7key(s)"
+    - "&c❅ &7Amount &8» &f%amount%"
+    - "&a❅ &7You get &8» &f%items% &7(&f%each% &7each)"
+    - "&c❅ &7Cost &8» &c%cost% &7key(s)"
+    - "&a❅ &7You have &8» &c%keys% &7key(s)"
     - ""
-  # Background of the menu.
+  # Snowy background.
   FILLER:
     ENABLED: true
-    MATERIAL: "BLACK_STAINED_GLASS_PANE"
+    MATERIAL: "WHITE_STAINED_GLASS_PANE"
     NAME: " "
-  # Frame around the edges.
+  # Candy cane frame: MATERIALS cycles around the border (needs v4.0+).
+  # On older versions only MATERIAL is used.
   BORDER:
     ENABLED: true
-    MATERIAL: "GRAY_STAINED_GLASS_PANE"
+    MATERIAL: "RED_STAINED_GLASS_PANE"
+    MATERIALS:
+      - "RED_STAINED_GLASS_PANE"
+      - "WHITE_STAINED_GLASS_PANE"
+      - "GREEN_STAINED_GLASS_PANE"
+      - "WHITE_STAINED_GLASS_PANE"
     NAME: " "
 
-  # Quantity buttons. A button's behaviour comes from its name:
-  #   ADD_*    -> adds INCREMENT        SET_*   -> sets the amount
-  #   REMOVE_* -> takes away DECREMENT  MAX_*   -> jumps to the highest allowed
-  #   MIN_* / RESET_* -> back to the minimum
-  # or set MODE: ADD / SUBTRACT / SET / MAX / MIN explicitly.
-  # Shift clicking an add button jumps to the max, shift clicking a remove button resets to the min.
   QUANTITY_ADJUST:
     ADD:
       MATERIAL: "LIME_STAINED_GLASS_PANE"
@@ -144,15 +157,15 @@ CONFIRM-MENU:
         - "&7Selected &8» &f%amount%&7/&f%max%"
       ADD_1:
         SLOT: 23
-        NAME: "&#00FC00Add 1"
+        NAME: "&a❅ Add 1"
         INCREMENT: 1
       ADD_10:
         SLOT: 24
-        NAME: "&#00FC00Add 10"
+        NAME: "&a❅ Add 10"
         INCREMENT: 10
       SET_64:
         SLOT: 25
-        NAME: "&#00FC00Set to 64"
+        NAME: "&a❅ Set to 64"
         INCREMENT: 64
 
     REMOVE:
@@ -161,66 +174,49 @@ CONFIRM-MENU:
         - "&7Selected &8» &f%amount%&7/&f%max%"
       REMOVE_1:
         SLOT: 21
-        NAME: "&cRemove 1"
+        NAME: "&c❆ Remove 1"
         DECREMENT: 1
       REMOVE_10:
         SLOT: 20
-        NAME: "&cRemove 10"
+        NAME: "&c❆ Remove 10"
         DECREMENT: 10
       REMOVE_64:
         SLOT: 19
-        NAME: "&cRemove 64"
+        NAME: "&c❆ Remove 64"
         DECREMENT: 64
 
   BUTTONS:
-    # SLOTS makes a button a wide block; SLOT still works for a single square.
     CONFIRM:
       MATERIAL: "LIME_STAINED_GLASS_PANE"
-      NAME: "&#00FC00ᴄᴏɴꜰɪʀᴍ"
-      SLOTS: [41, 42, 43]
+      NAME: "&a&lᴜɴᴡʀᴀᴘ ɢɪꜰᴛ"
+      SLOTS: [41]
       LORE:
         - ""
-        - "&7Buy &f%amount%&7 for &c%cost% &7key(s)."
+        - "&7Unwrap &f%amount%&7 for &c%cost% &7key(s)."
         - ""
     CANCEL:
       MATERIAL: "RED_STAINED_GLASS_PANE"
-      NAME: "&#FC0000ᴄᴀɴᴄᴇʟ"
-      SLOTS: [37, 38, 39]
+      NAME: "&c&lᴄᴀɴᴄᴇʟ"
+      SLOTS: [39]
       LORE:
         - ""
         - "&7Back to the crate."
         - ""
     INFO:
-      ENABLED: true
-      MATERIAL: "TRIPWIRE_HOOK"
-      NAME: "&cYour keys&8: &f%keys%"
+      ENABLED: false
+      MATERIAL: "BELL"
+      NAME: "&c❄ &7Your keys&8: &f%keys%"
       SLOT: 13
       LORE:
         - ""
-        - "&8▪ &7Each item costs &c1 &7key."
-        - "&8▪ &7Buying &f%amount%&7 costs &c%cost%&7."
+        - "&8▪ &7Each gift costs &c1 &7key."
+        - "&8▪ &7Unwrapping &f%amount%&7 costs &c%cost%&7."
         - ""
 
-# Per material purchase limits. A key matches the material exactly, as a word suffix
-# (SHULKER_BOX -> WHITE_SHULKER_BOX) or as a plain suffix (BOW -> CROSSBOW, AXE -> PICKAXE).
-# The most specific match wins, DEFAULT is the fallback.
-# HIDE_QUANTITY_BUTTONS removes the green/red buttons entirely for that item.
-#
-# With RESTRICTIONS-IN-ITEMS: true (default) MAX_QUANTITY counts items, so a reward saved as
-# 16 spawners with SPAWNER: 16 is exactly one purchase that hands over all 16.
-#
-# MAX_PURCHASES overrides that maths when you want both: how much comes per key is the stack size
-# in crates.yml, and MAX_PURCHASES is how many times it can be bought at once. For example
-#   SPAWNER:  { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }                -> 1 buy  = 16 spawners
-#   DIAMOND_BLOCK: { MAX_PURCHASES: 10 }                           -> 10 buys = 10 x 64 blocks
+# Per material purchase limits (unchanged from your setup).
 RESTRICTIONS:
+  SPAWNER: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
 
-  # --- Economy-sensitive: deliberately below stack size ---
-  SPAWNER:
-    MAX_QUANTITY: 16
-    MIN_QUANTITY: 1
-
-  # --- Armor (stack size 1) ---
   HELMET: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   CHESTPLATE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   LEGGINGS: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
@@ -230,7 +226,6 @@ RESTRICTIONS:
   SHIELD: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   TOTEM_OF_UNDYING: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
 
-  # --- Tools & weapons (stack size 1) ---
   SWORD: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   AXE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   PICKAXE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
@@ -246,7 +241,6 @@ RESTRICTIONS:
   BRUSH: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   ON_A_STICK: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
 
-  # --- Consumables & containers (stack size 1) ---
   POTION: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   SHULKER_BOX: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   ENCHANTED_BOOK: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
@@ -259,7 +253,6 @@ RESTRICTIONS:
   BUNDLE: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   GOAT_HORN: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
 
-  # --- Transport & misc (stack size 1) ---
   MINECART: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   BOAT: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   RAFT: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
@@ -270,7 +263,6 @@ RESTRICTIONS:
   LAVA_BUCKET: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
   POWDER_SNOW_BUCKET: { MAX_QUANTITY: 1, MIN_QUANTITY: 1, HIDE_QUANTITY_BUTTONS: true }
 
-  # --- Stack size 16 ---
   ENDER_PEARL: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
   ENDER_EYE: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
   HONEY_BOTTLE: { MAX_QUANTITY: 16, MIN_QUANTITY: 1 }
@@ -286,36 +278,35 @@ RESTRICTIONS:
   DEFAULT:
     MAX_QUANTITY: 64
     MIN_QUANTITY: 1
-    # Uncomment to let any unlisted reward be bought several times over
-    # (a 64 block reward would then be up to 10 x 64 blocks):
-    # MAX_PURCHASES: 10
 
 MESSAGES:
-  NO_PERMISSION: "&cYou don't have permission to do that."
-  PLAYERS_ONLY: "&cOnly players can use this."
-  PLAYER_NOT_FOUND: "&cPlayer &#FF5555%player%&c is not online."
-  NOT_ENOUGH_KEYS: "&cYou don't have enough keys. &8(&#FF5555%amount% &cneeded&8)"
-  INVENTORY_FULL: "&cYour inventory is full!"
-  INVENTORY_PARTIAL: "&cOnly &#FF5555%items%&c fit in your inventory - you were not charged for the other &#FF5555%left_items%&c."
-  REWARD_RECEIVED: "&cYou bought &#FF5555%items%x %item% &cfrom &#FF5555%crate%&c."
-  NO_CRATE_FOUND: "&cCrate &#FF5555%crate%&c does not exist."
-  CRATE_CREATED: "&cCreated the crate &#FF5555%crate%&c."
-  CRATE_DELETED: "&cDeleted the crate &#FF5555%crate%&c."
-  CRATE_SAVED: "&cSaved the rewards of &#FF5555%crate%&c."
-  NO_TARGET_BLOCK: "&cYou need to look at a block."
-  RECEIVED_KEYS: "&cYou have received &#FF5555%amount%&c key(s) for the crate &#FF5555%crate%&c."
-  GIVEN_KEYS: "&cGave &#FF5555%amount%&c key(s) for the crate &#FF5555%crate%&c to &#FF5555%player%&c."
-  KEYALL_GIVEN: "&cGave &#FF5555%amount%&c key(s) for the crate &#FF5555%crate%&c to every online player."
-  KEYS_REMOVED_ADMIN: "&cRemoved &#FF5555%amount%&c key(s) for the crate &#FF5555%crate%&c from &#FF5555%player%&c."
-  KEYS_SET: "&cSet the &#FF5555%crate%&c keys of &#FF5555%player%&c to &#FF5555%amount%&c."
-  CRATE_ALREADY_EXISTS: "&cCrate &#FF5555%crate%&c already exists."
-  CRATE_SET: "&cThis block is now the crate &#FF5555%crate%&c."
-  CRATE_UNSET: "&cThis block is no longer the crate &#FF5555%crate%&c."
-  CRATE_PROTECTED: "&cThis block belongs to the crate &#FF5555%crate%&c."
-  NO_CRATES_FOUND: "&cNo crates found."
-  ALERTS_ENABLED: "&cCrate messages are now &#FF5555enabled&c."
-  ALERTS_DISABLED: "&cCrate messages are now &#FF5555disabled&c. &7(/cratealerts to turn them back on)"
-  CRATE_OPENED_FOR: "&cOpened &#FF5555%crate%&c for &#FF5555%player%&c."
-  CRATE_LIST_HEADER: "&cCrates &8(&#FF5555%amount%&8)"
-  CRATE_LIST_ENTRY: "&8 ▪ &#FF5555%crate% &7keys&8: &c%keys% &8- &7/%label% %crate%"
-  CONFIG_RELOADED: "&cCrates configuration reloaded."
+  NO_PERMISSION: "&c❄ You don't have permission to do that."
+  PLAYERS_ONLY: "&c❄ Only players can use this."
+  PLAYER_NOT_FOUND: "&c❄ Player &#FF5555%player%&c is not online."
+  NOT_ENOUGH_KEYS: "&c❄ Not enough keys. &8(&#FF5555%amount% &cneeded&8)"
+  INVENTORY_FULL: "&c❄ Your inventory is full - no room for presents!"
+  INVENTORY_PARTIAL: "&c❄ Only &#FF5555%items%&c fit in your inventory - you were not charged for the other &#FF5555%left_items%&c."
+  REWARD_RECEIVED: "&a❅ &7You unwrapped &a%items%x %item% &7from &c%crate%&7!"
+  PRESENT_RECEIVED: "&a❅ &7You opened &a%amount% &7present(s) from &c%crate%&7 and got&8: %rewards%"
+  PRESENT_EMPTY: "&c❄ &c%crate% has no rewards to give."
+  NO_CRATE_FOUND: "&c❄ Crate &#FF5555%crate%&c does not exist."
+  CRATE_CREATED: "&a❅ Created the crate &f%crate%&a."
+  CRATE_DELETED: "&c❄ Deleted the crate &f%crate%&c."
+  CRATE_SAVED: "&a❅ Saved the rewards of &f%crate%&a."
+  NO_TARGET_BLOCK: "&c❄ You need to look at a block."
+  RECEIVED_KEYS: "&a❅ &7You received &a%amount% &7key(s) for &c%crate%&7. Happy holidays!"
+  GIVEN_KEYS: "&a❅ &7Gave &a%amount% &7key(s) for &c%crate% &7to &a%player%&7."
+  KEYALL_GIVEN: "&a❅ &7Gave &a%amount% &7key(s) for &c%crate% &7to every online player."
+  KEYS_REMOVED_ADMIN: "&c❄ &7Removed &c%amount% &7key(s) for &c%crate% &7from &c%player%&7."
+  KEYS_SET: "&a❅ &7Set the &c%crate% &7keys of &a%player% &7to &a%amount%&7."
+  CRATE_ALREADY_EXISTS: "&c❄ Crate &#FF5555%crate%&c already exists."
+  CRATE_SET: "&a❅ This block is now the crate &f%crate%&a."
+  CRATE_UNSET: "&c❄ This block is no longer the crate &f%crate%&c."
+  CRATE_PROTECTED: "&c❄ This block belongs to the crate &#FF5555%crate%&c."
+  NO_CRATES_FOUND: "&c❄ No crates found."
+  CONFIG_RELOADED: "&a❅ Crates configuration reloaded."
+  CRATE_OPENED_FOR: "&a❅ Opened &f%crate% &afor &f%player%&a."
+  CRATE_LIST_HEADER: "&c❄ &aChristmas Crates &8(&f%amount%&8)"
+  CRATE_LIST_ENTRY: "&8 ▪ &c%crate% &7keys&8: &a%keys% &8- &7/%label% %crate%"
+  ALERTS_ENABLED: "&a❅ Crate messages are now &aON&a."
+  ALERTS_DISABLED: "&c❄ Crate messages are now &cOFF&c. &7(/cratealerts to turn them back on)"

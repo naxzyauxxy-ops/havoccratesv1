@@ -1,28 +1,46 @@
+/*
+ * Decompiled with CFR 0.152.
+ * 
+ * Could not load the following classes:
+ *  java.lang.Class
+ *  java.lang.ClassNotFoundException
+ *  java.lang.IllegalStateException
+ *  java.lang.Object
+ *  java.lang.String
+ *  java.util.Map
+ *  java.util.UUID
+ *  java.util.concurrent.ConcurrentHashMap
+ *  org.bukkit.Bukkit
+ *  org.bukkit.entity.Player
+ *  org.bukkit.plugin.Plugin
+ */
 package net.havoc.crates.data;
 
+import java.lang.Class;
+import java.lang.ClassNotFoundException;
+import java.lang.IllegalStateException;
+import java.lang.Object;
+import java.lang.String;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import net.havoc.crates.CratesPlugin;
+import net.havoc.crates.data.Profile;
 import net.havoc.crates.data.storage.FlatfileStorage;
 import net.havoc.crates.data.storage.KeyStorage;
 import net.havoc.crates.data.storage.SqlStorage;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-/**
- * Caches {@link Profile}s of online players and persists them through the configured backend.
- */
 public class ProfileManager {
-
     private final CratesPlugin plugin;
-    private final Map<UUID, Profile> profiles = new ConcurrentHashMap<>();
+    private final Map<UUID, Profile> profiles = new ConcurrentHashMap();
     private final KeyStorage storage;
 
     public ProfileManager(CratesPlugin plugin) {
         this.plugin = plugin;
-        this.storage = createStorage();
+        this.storage = this.createStorage();
         this.storage.init();
     }
 
@@ -30,46 +48,37 @@ public class ProfileManager {
         String type = this.plugin.getMainConfig().getString("DATABASE.TYPE", "FLATFILE").toUpperCase();
         try {
             if (type.equals("MYSQL")) {
-                Class.forName("com.mysql.cj.jdbc.Driver");
+                Class.forName((String)"com.mysql.cj.jdbc.Driver");
                 return new SqlStorage(this.plugin, true);
             }
             if (type.equals("SQLITE")) {
-                Class.forName("org.sqlite.JDBC");
+                Class.forName((String)"org.sqlite.JDBC");
                 return new SqlStorage(this.plugin, false);
             }
-        } catch (ClassNotFoundException | IllegalStateException exception) {
-            this.plugin.getLogger().warning("Storage type " + type + " is unavailable ("
-                    + exception.getMessage() + "), falling back to flatfile.");
+        }
+        catch (ClassNotFoundException | IllegalStateException exception) {
+            this.plugin.getLogger().warning("Storage type " + type + " is unavailable (" + exception.getMessage() + "), falling back to flatfile.");
         }
         return new FlatfileStorage(this.plugin);
     }
 
     public Profile getProfile(UUID uuid) {
-        return this.profiles.computeIfAbsent(uuid, id -> {
-            Profile profile = new Profile(id);
+        return (Profile)this.profiles.computeIfAbsent(uuid, id -> {
+            Profile profile = new Profile((UUID)id);
             this.storage.load(profile);
             return profile;
         });
     }
 
     public Profile getProfile(Player player) {
-        return getProfile(player.getUniqueId());
+        return this.getProfile(player.getUniqueId());
     }
 
-    /**
-     * Pre-loads a profile off the main thread when a player joins.
-     *
-     * <p>If something already cached (and possibly changed) the profile while this was running -
-     * an admin running /key give the instant a player joins, for example - the freshly read copy
-     * is dropped instead of overwriting it. That synchronous path reads the same storage, so no
-     * data is lost either way; what this prevents is a late async read wiping keys that were just
-     * handed out, which would then be written back to disk on quit.
-     */
     public void loadAsync(UUID uuid) {
         if (this.profiles.containsKey(uuid)) {
             return;
         }
-        Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> {
+        Bukkit.getScheduler().runTaskAsynchronously((Plugin)this.plugin, () -> {
             Profile profile = new Profile(uuid);
             this.storage.load(profile);
             this.profiles.putIfAbsent(uuid, profile);
@@ -78,13 +87,9 @@ public class ProfileManager {
 
     public void saveAsync(Profile profile) {
         profile.setDirty(false);
-        Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> this.storage.save(profile));
+        Bukkit.getScheduler().runTaskAsynchronously((Plugin)this.plugin, () -> this.storage.save(profile));
     }
 
-    /**
-     * Reads a profile straight from storage, bypassing the cache. Used by /crates debug to show
-     * what is actually on disk versus what is in memory.
-     */
     public Profile readFromStorage(UUID uuid) {
         Profile profile = new Profile(uuid);
         this.storage.load(profile);
@@ -96,9 +101,9 @@ public class ProfileManager {
     }
 
     public void unload(UUID uuid) {
-        Profile profile = this.profiles.remove(uuid);
+        Profile profile = (Profile)this.profiles.remove(uuid);
         if (profile != null) {
-            Bukkit.getScheduler().runTaskAsynchronously(this.plugin, () -> this.storage.save(profile));
+            Bukkit.getScheduler().runTaskAsynchronously((Plugin)this.plugin, () -> this.storage.save(profile));
         }
     }
 
@@ -109,7 +114,7 @@ public class ProfileManager {
     }
 
     public void shutdown() {
-        saveAll();
+        this.saveAll();
         this.storage.close();
     }
 }
