@@ -26,8 +26,8 @@ CRATE-VIEW-MENU:
   PLACEHOLDER-NAME: " "
   ITEM-LORE:
     - ""
-    - "&c✦ &aLeft click &7to unwrap &f%each%"
-    - "&c✦ &aRight click &7to unwrap &f%items%"
+    - "&c✦ &aLeft click &7to buy &f%each%"
+    - "&c✦ &aRight click &7to buy &f%items%"
     - ""
     - "&7Your keys&8: &c%keys%"
 
@@ -68,6 +68,36 @@ CRATE-COMMAND:
   REQUIRE-KEYS: false
 
 # ==========================================================
+#  ❄  ʜᴏʟᴏɢʀᴀᴍꜱ  ❄
+#  Floating text above every crate block, drawn with
+#  invisible armour stands - no hologram plugin needed.
+#  %crate% = crate name, %crate_upper% = CRATE NAME,
+#  %rewards% = how many rewards it holds.
+# ==========================================================
+HOLOGRAMS:
+  ENABLED: true
+  # Height of the first line above the crate block.
+  HEIGHT: 2.8
+  # Gap between lines.
+  LINE-SPACING: 0.28
+  # Puts holograms back after a chunk reload.
+  REFRESH-SECONDS: 30
+  # Used by every crate that has no override below.
+  LINES:
+    - "&c&l❄ &a&l%crate_upper% CRATE &c&l❄"
+    - "&8► &7Obtain @ &f/store &8◄"
+    - "&a► &7Right click to &aOpen &a◄"
+    - "&f❅ &7Merry Christmas! &f❅"
+  # Per crate text. The section name must match the crate name in crates.yml.
+  CRATES:
+    Christmas:
+      LINES:
+        - "&c&l❄ &a&lCHRISTMAS CRATE &c&l❄"
+        - "&8► &7Obtain @ &f/store &8◄"
+        - "&c► &7Right click to &cUnwrap &c◄"
+        - "&f❅ &7One key, one random gift &f❅"
+
+# ==========================================================
 #  ❄  ᴍʏꜱᴛᴇʀʏ ᴘʀᴇꜱᴇɴᴛ  ❄
 #  A present sits in every crate menu. One key opens it and
 #  hands out ONE random reward from that crate.
@@ -91,11 +121,17 @@ PRESENT:
   NAME: "&c❄ &aᴍʏꜱᴛᴇʀʏ ᴘʀᴇꜱᴇɴᴛ &c❄"
   # -1 = auto: centered on the first row that has no rewards in it.
   SLOT: -1
-  # "ALL", or list the crates that get a present: ["Gold", "Rare"]
+  # Only these crates get a present - everything else stays a normal crate.
+  # Use the crate names exactly as they appear in crates.yml (Common, Gold, Ruby, God, Rare, Loot).
+  # Put "ALL" here instead to give every crate a present.
   CRATES:
-    - "ALL"
+    - "Christmas"
   # Most presents that can be opened at once.
   MAX-AMOUNT: 64
+  # true -> the crate's own rewards are NOT shown in the menu, only the present, so nobody can
+  #         pick the item they want instead of rolling for it. The present is centered.
+  # false -> the rewards are shown next to the present as usual.
+  HIDE-REWARDS: true
   # Show the odds in the lore where %chances% sits.
   SHOW-CHANCES: true
   CHANCE-LINE: "&8 ▪ &f%item% &8» &a%chance%%"
@@ -104,6 +140,14 @@ PRESENT:
   # How each rolled gift is listed in the chat summary.
   REWARD-ENTRY: "&a%amount%x %item%"
   REWARD-SEPARATOR: "&7, "
+  # The confirm button while opening presents. Delete this block to reuse the normal one.
+  CONFIRM-BUTTON:
+    MATERIAL: "LIME_STAINED_GLASS_PANE"
+    NAME: "&a&lᴜɴᴡʀᴀᴘ ɢɪꜰᴛ"
+    LORE:
+      - ""
+      - "&7Unwrap &f%amount%&7 present(s) for &c%cost% &7key(s)."
+      - ""
   LORE:
     - ""
     - "&7One key &8» &7one random gift."
@@ -188,11 +232,11 @@ CONFIRM-MENU:
   BUTTONS:
     CONFIRM:
       MATERIAL: "LIME_STAINED_GLASS_PANE"
-      NAME: "&a&lᴜɴᴡʀᴀᴘ ɢɪꜰᴛ"
+      NAME: "&a&lᴄᴏɴꜰɪʀᴍ"
       SLOTS: [41]
       LORE:
         - ""
-        - "&7Unwrap &f%amount%&7 for &c%cost% &7key(s)."
+        - "&7Buy &f%amount%&7 for &c%cost% &7key(s)."
         - ""
     CANCEL:
       MATERIAL: "RED_STAINED_GLASS_PANE"
@@ -286,8 +330,8 @@ MESSAGES:
   NOT_ENOUGH_KEYS: "&c❄ Not enough keys. &8(&#FF5555%amount% &cneeded&8)"
   INVENTORY_FULL: "&c❄ Your inventory is full - no room for presents!"
   INVENTORY_PARTIAL: "&c❄ Only &#FF5555%items%&c fit in your inventory - you were not charged for the other &#FF5555%left_items%&c."
-  REWARD_RECEIVED: "&a❅ &7You unwrapped &a%items%x %item% &7from &c%crate%&7!"
-  PRESENT_RECEIVED: "&a❅ &7You opened &a%amount% &7present(s) from &c%crate%&7 and got&8: %rewards%"
+  REWARD_RECEIVED: "&a❅ &7You bought &a%items%x %item% &7from &c%crate%&7."
+  PRESENT_RECEIVED: "&c❄ &7You unwrapped &a%amount% &7present(s) from &c%crate%&7 and got&8: %rewards%"
   PRESENT_EMPTY: "&c❄ &c%crate% has no rewards to give."
   NO_CRATE_FOUND: "&c❄ Crate &#FF5555%crate%&c does not exist."
   CRATE_CREATED: "&a❅ Created the crate &f%crate%&a."

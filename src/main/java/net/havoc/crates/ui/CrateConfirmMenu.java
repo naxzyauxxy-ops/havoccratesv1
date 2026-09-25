@@ -643,7 +643,23 @@ extends Menu {
 
         @Override
         public ItemStack getButtonItem(Player player) {
-            return ItemBuilder.of(CrateConfirmMenu.this.config().getString("CONFIRM-MENU.BUTTONS.CONFIRM.MATERIAL", "LIME_STAINED_GLASS_PANE"), Material.LIME_STAINED_GLASS_PANE).name(CrateConfirmMenu.this.config().getString("CONFIRM-MENU.BUTTONS.CONFIRM.NAME", "&#00FC00\u1d04\u1d0f\u0274\ua730\u026a\u0280\u1d0d").replace((CharSequence)"%amount%", (CharSequence)String.valueOf((int)CrateConfirmMenu.this.amount))).lore(CrateConfirmMenu.this.replaceLore((List<String>)CrateConfirmMenu.this.config().getStringList("CONFIRM-MENU.BUTTONS.CONFIRM.LORE"), player)).build();
+            // A present gets its own wording ("unwrap") while a normal purchase keeps "confirm".
+            String base = CrateConfirmMenu.this.present
+                    && CrateConfirmMenu.this.config().contains("PRESENT.CONFIRM-BUTTON")
+                    ? "PRESENT.CONFIRM-BUTTON"
+                    : "CONFIRM-MENU.BUTTONS.CONFIRM";
+            List<String> lore = CrateConfirmMenu.this.config().getStringList(base + ".LORE");
+            if (lore == null || lore.isEmpty()) {
+                lore = CrateConfirmMenu.this.config().getStringList("CONFIRM-MENU.BUTTONS.CONFIRM.LORE");
+            }
+            return ItemBuilder.of(CrateConfirmMenu.this.config().getString(base + ".MATERIAL",
+                            CrateConfirmMenu.this.config().getString("CONFIRM-MENU.BUTTONS.CONFIRM.MATERIAL",
+                                    "LIME_STAINED_GLASS_PANE")), Material.LIME_STAINED_GLASS_PANE)
+                    .name(CrateConfirmMenu.this.config().getString(base + ".NAME",
+                                    "&#00FC00\u1d04\u1d0f\u0274\ua730\u026a\u0280\u1d0d")
+                            .replace("%amount%", String.valueOf(CrateConfirmMenu.this.amount)))
+                    .lore(CrateConfirmMenu.this.replaceLore(lore, player))
+                    .build();
         }
 
         @Override

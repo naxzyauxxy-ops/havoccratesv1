@@ -68,6 +68,9 @@ implements Listener {
         }
         crate.removeLocation(block.getLocation());
         this.plugin.getCrateManager().save();
+        if (this.plugin.getHologramManager() != null) {
+            this.plugin.getHologramManager().refresh();
+        }
         this.plugin.message((CommandSender)event.getPlayer(), "CRATE_UNSET", "%crate%", crate.getDisplayName());
     }
 }

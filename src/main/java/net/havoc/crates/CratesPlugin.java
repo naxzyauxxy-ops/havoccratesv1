@@ -58,6 +58,7 @@ extends JavaPlugin {
     private Config cratesConfig;
     private CrateManager crateManager;
     private ProfileManager profileManager;
+    private net.havoc.crates.hologram.HologramManager hologramManager;
     private static final List<String> DEFAULT_TOGGLEABLE;
     private static final List<String> DEFAULT_ALWAYS_SHOW;
 
@@ -87,11 +88,16 @@ extends JavaPlugin {
         if (!this.mainConfig.getConfiguration().contains("ALERTS")) {
             this.getLogger().info("config.yml has no ALERTS section - using the built-in defaults (REWARD_RECEIVED, INVENTORY_PARTIAL, RECEIVED_KEYS can be silenced with /cratealerts).");
         }
+        this.hologramManager = new net.havoc.crates.hologram.HologramManager(this);
+        this.hologramManager.start();
         this.getLogger().info("HavocCrates v" + this.getDescription().getVersion() + " enabled.");
     }
 
     public void onDisable() {
         Bukkit.getOnlinePlayers().forEach(player -> player.closeInventory());
+        if (this.hologramManager != null) {
+            this.hologramManager.despawnAll();
+        }
         if (this.profileManager != null) {
             this.profileManager.shutdown();
         }
@@ -112,6 +118,13 @@ extends JavaPlugin {
     public void reloadAll() {
         this.mainConfig.reload();
         this.crateManager.load();
+        if (this.hologramManager != null) {
+            this.hologramManager.refresh();
+        }
+    }
+
+    public net.havoc.crates.hologram.HologramManager getHologramManager() {
+        return this.hologramManager;
     }
 
     public Config getMainConfig() {

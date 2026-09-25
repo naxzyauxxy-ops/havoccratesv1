@@ -96,6 +96,9 @@ TabCompleter {
             }
             crate.addLocation(block.getLocation());
             this.plugin.getCrateManager().save();
+            if (this.plugin.getHologramManager() != null) {
+                this.plugin.getHologramManager().refresh();
+            }
             this.plugin.message(sender, "CRATE_SET", "%crate%", crate.getName());
             return true;
         }
@@ -117,6 +120,9 @@ TabCompleter {
             }
             crate.removeLocation(block.getLocation());
             this.plugin.getCrateManager().save();
+            if (this.plugin.getHologramManager() != null) {
+                this.plugin.getHologramManager().refresh();
+            }
             this.plugin.message(sender, "CRATE_UNSET", "%crate%", crate.getName());
             return true;
         }

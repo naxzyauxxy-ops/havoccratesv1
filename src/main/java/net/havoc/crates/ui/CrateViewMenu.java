@@ -84,14 +84,19 @@ extends Menu {
             }
         }
         java.util.Set<Integer> used = new java.util.HashSet<Integer>();
-        for (Map.Entry entry : this.crate.resolveSlots().entrySet()) {
-            int slot = (Integer)entry.getKey();
-            ItemStack item = (ItemStack)this.crate.getRewards().get(entry.getValue());
-            if (slot < 0 || slot >= size || item == null) continue;
-            used.add(Integer.valueOf(slot));
-            buttons.put(slot, new CrateItemButton((Integer)entry.getValue(), item));
+        // A present crate keeps its rewards a surprise: only the present is shown, so nobody can
+        // pick the item they want straight out of the menu.
+        boolean hideRewards = this.hasPresent() && this.config().getBoolean("PRESENT.HIDE-REWARDS", true);
+        if (!hideRewards) {
+            for (Map.Entry entry : this.crate.resolveSlots().entrySet()) {
+                int slot = (Integer)entry.getKey();
+                ItemStack item = (ItemStack)this.crate.getRewards().get(entry.getValue());
+                if (slot < 0 || slot >= size || item == null) continue;
+                used.add(Integer.valueOf(slot));
+                buttons.put(slot, new CrateItemButton((Integer)entry.getValue(), item));
+            }
         }
-        int presentSlot = this.presentSlot(size, used);
+        int presentSlot = hideRewards ? this.centerSlot(size) : this.presentSlot(size, used);
         if (presentSlot >= 0) {
             buttons.put(Integer.valueOf(presentSlot), new PresentButton());
         }
@@ -99,26 +104,47 @@ extends Menu {
     }
 
     /**
+     * True when this crate is one of the crates listed under PRESENT.CRATES.
+     */
+    private boolean hasPresent() {
+        if (!this.config().getBoolean("PRESENT.ENABLED", true)) {
+            return false;
+        }
+        List<String> crates = this.config().getStringList("PRESENT.CRATES");
+        if (crates == null || crates.isEmpty()) {
+            return false;
+        }
+        for (String name : crates) {
+            if (name == null) continue;
+            if (name.equalsIgnoreCase("ALL") || name.equalsIgnoreCase(this.crate.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Middle of the menu, used when the rewards are hidden and the present stands alone.
+     */
+    private int centerSlot(int size) {
+        if (!this.hasPresent()) {
+            return -1;
+        }
+        int configured = this.config().getInt("PRESENT.SLOT", -1);
+        if (configured >= 0) {
+            return configured < size ? configured : -1;
+        }
+        int rows = Math.max(1, size / 9);
+        return (rows / 2) * 9 + 4;
+    }
+
+    /**
      * Where the mystery present sits: PRESENT.SLOT, or centered on the first row below the
      * rewards when it is -1. Returns -1 when the present is disabled for this crate.
      */
     private int presentSlot(int size, java.util.Set<Integer> used) {
-        if (!this.config().getBoolean("PRESENT.ENABLED", true)) {
+        if (!this.hasPresent()) {
             return -1;
-        }
-        List<String> crates = this.config().getStringList("PRESENT.CRATES");
-        if (crates != null && !crates.isEmpty()) {
-            boolean listed = false;
-            for (String name : crates) {
-                if (name == null) continue;
-                if (name.equalsIgnoreCase("ALL") || name.equalsIgnoreCase(this.crate.getName())) {
-                    listed = true;
-                    break;
-                }
-            }
-            if (!listed) {
-                return -1;
-            }
         }
         int configured = this.config().getInt("PRESENT.SLOT", -1);
         if (configured >= 0) {
