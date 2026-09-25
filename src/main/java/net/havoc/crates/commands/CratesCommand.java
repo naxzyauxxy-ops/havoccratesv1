@@ -43,25 +43,166 @@ TabCompleter {
         this.plugin = plugin;
     }
 
-    /*
-     * Exception decompiling
-     */
+    @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        /*
-         * This method has failed to decompile.  When submitting a bug report, please provide this stack trace, and (if you hold appropriate legal rights) the relevant class file.
-         * 
-         * org.benf.cfr.reader.bytecode.analysis.opgraph.op4rewriters.SwitchStringRewriter$TooOptimisticMatchException
-         *     at java.lang.Throwable$FakeClass.fakeMethod(Throwable.java:1802596)
-         *     at java.lang.Throwable$FakeClass.fakeMethod(Throwable.java:4489513)
-         *     at java.lang.Throwable$FakeClass.fakeMethod(Throwable.java:4491475)
-         *     at java.lang.Throwable$FakeClass.fakeMethod(Throwable.java:3820062)
-         *     at java.lang.Throwable$FakeClass.fakeMethod(Throwable.java:3820183)
-         *     at java.lang.Throwable$FakeClass.fakeMethod(Throwable.java:1024810)
-         *     at java.lang.Throwable$FakeClass.fakeMethod(Throwable.java:4466968)
-         *     at java.lang.Throwable$FakeClass.fakeMethod(Throwable.java:604767)
-         *     at java.lang.Throwable$FakeClass.fakeMethod(Throwable.java:4234497)
-         */
-        throw new IllegalStateException("Decompilation failed");
+        if (!sender.hasPermission("havoccrates.admin")) {
+            this.plugin.message(sender, "NO_PERMISSION", new String[0]);
+            return true;
+        }
+        if (args.length == 0) {
+            this.usage(sender, label);
+            return true;
+        }
+
+        String sub = args[0].toLowerCase(Locale.ROOT);
+
+        if (sub.equals("create")) {
+            if (args.length < 2) {
+                sender.sendMessage(CC.translate("&cUsage: /" + label + " create <crate>"));
+                return true;
+            }
+            if (this.plugin.getCrateManager().getCrate(args[1]) != null) {
+                this.plugin.message(sender, "CRATE_ALREADY_EXISTS", "%crate%", args[1]);
+                return true;
+            }
+            this.plugin.getCrateManager().createCrate(args[1]);
+            this.plugin.message(sender, "CRATE_CREATED", "%crate%", args[1]);
+            return true;
+        }
+
+        if (sub.equals("delete")) {
+            Crate crate = this.requireCrate(sender, args, label, "delete");
+            if (crate == null) {
+                return true;
+            }
+            this.plugin.getCrateManager().deleteCrate(crate);
+            this.plugin.message(sender, "CRATE_DELETED", "%crate%", crate.getName());
+            return true;
+        }
+
+        if (sub.equals("set")) {
+            if (!(sender instanceof Player)) {
+                this.plugin.message(sender, "PLAYERS_ONLY", new String[0]);
+                return true;
+            }
+            Crate crate = this.requireCrate(sender, args, label, "set");
+            if (crate == null) {
+                return true;
+            }
+            org.bukkit.block.Block block = ((Player)sender).getTargetBlockExact(6);
+            if (block == null || block.getType().isAir()) {
+                this.plugin.message(sender, "NO_TARGET_BLOCK", new String[0]);
+                return true;
+            }
+            crate.addLocation(block.getLocation());
+            this.plugin.getCrateManager().save();
+            this.plugin.message(sender, "CRATE_SET", "%crate%", crate.getName());
+            return true;
+        }
+
+        if (sub.equals("unset")) {
+            if (!(sender instanceof Player)) {
+                this.plugin.message(sender, "PLAYERS_ONLY", new String[0]);
+                return true;
+            }
+            org.bukkit.block.Block block = ((Player)sender).getTargetBlockExact(6);
+            if (block == null) {
+                this.plugin.message(sender, "NO_TARGET_BLOCK", new String[0]);
+                return true;
+            }
+            Crate crate = this.plugin.getCrateManager().getCrate(block.getLocation());
+            if (crate == null) {
+                this.plugin.message(sender, "NO_CRATE_FOUND", "%crate%", "this block");
+                return true;
+            }
+            crate.removeLocation(block.getLocation());
+            this.plugin.getCrateManager().save();
+            this.plugin.message(sender, "CRATE_UNSET", "%crate%", crate.getName());
+            return true;
+        }
+
+        if (sub.equals("edit")) {
+            if (!(sender instanceof Player)) {
+                this.plugin.message(sender, "PLAYERS_ONLY", new String[0]);
+                return true;
+            }
+            Crate crate = this.requireCrate(sender, args, label, "edit");
+            if (crate == null) {
+                return true;
+            }
+            new net.havoc.crates.ui.CrateEditMenu(this.plugin, crate).open((Player)sender);
+            return true;
+        }
+
+        if (sub.equals("open")) {
+            Crate crate = this.requireCrate(sender, args, label, "open");
+            if (crate == null) {
+                return true;
+            }
+            Player target = args.length >= 3
+                    ? Bukkit.getPlayerExact(args[2])
+                    : (sender instanceof Player ? (Player)sender : null);
+            if (target == null) {
+                this.plugin.message(sender, "PLAYER_NOT_FOUND", "%player%", args.length >= 3 ? args[2] : "");
+                return true;
+            }
+            new net.havoc.crates.ui.CrateViewMenu(this.plugin, crate).openMenu(target);
+            return true;
+        }
+
+        if (sub.equals("list")) {
+            List<String> names = this.plugin.getCrateManager().getCrateNames();
+            if (names.isEmpty()) {
+                this.plugin.message(sender, "NO_CRATES_FOUND", new String[0]);
+                return true;
+            }
+            sender.sendMessage(CC.translate("&7Crates &8(&f" + names.size() + "&8)&7: &f"
+                    + String.join("&7, &f", names)));
+            return true;
+        }
+
+        if (sub.equals("reload")) {
+            this.plugin.reloadAll();
+            this.plugin.message(sender, "CONFIG_RELOADED", new String[0]);
+            return true;
+        }
+
+        if (sub.equals("debug")) {
+            Player target = args.length >= 2
+                    ? Bukkit.getPlayerExact(args[1])
+                    : (sender instanceof Player ? (Player)sender : null);
+            sender.sendMessage(CC.translate("&8&m------------------------------"));
+            sender.sendMessage(CC.translate("&cHavocCrates &7v" + this.plugin.getDescription().getVersion()));
+            sender.sendMessage(CC.translate("&7Data folder: &f" + this.plugin.getDataFolder().getAbsolutePath()));
+            sender.sendMessage(CC.translate("&7Storage: &f" + this.plugin.getProfileManager().getStorageName()));
+            sender.sendMessage(CC.translate("&7Crates loaded: &f" + this.plugin.getCrateManager().getCrates().size()));
+            boolean fromConfig = this.plugin.getMainConfig().getConfiguration().contains("ALERTS");
+            sender.sendMessage(CC.translate("&7ALERTS section in config.yml: &f" + fromConfig
+                    + (fromConfig ? "" : " &8(using built-in defaults)")));
+            sender.sendMessage(CC.translate("&7Silenceable: &f"
+                    + String.join(", ", this.plugin.getToggleableMessages())));
+            if (target == null) {
+                sender.sendMessage(CC.translate("&8&m------------------------------"));
+                return true;
+            }
+            net.havoc.crates.data.Profile memory = this.plugin.getProfileManager().getProfile(target);
+            net.havoc.crates.data.Profile disk =
+                    this.plugin.getProfileManager().readFromStorage(target.getUniqueId());
+            sender.sendMessage(CC.translate("&7Player: &f" + target.getName()));
+            sender.sendMessage(CC.translate("&7  alerts in memory: &f" + memory.isAlerts()));
+            sender.sendMessage(CC.translate("&7  alerts on disk: &f" + disk.isAlerts()));
+            sender.sendMessage(CC.translate("&7  keys in memory: &f"
+                    + (memory.getKeys().isEmpty() ? "none" : memory.getKeys().toString())));
+            sender.sendMessage(CC.translate("&7  keys on disk: &f"
+                    + (disk.getKeys().isEmpty() ? "none" : disk.getKeys().toString())));
+            sender.sendMessage(CC.translate("&7  REWARD_RECEIVED would be: &f"
+                    + (this.plugin.wouldSilence(target, "REWARD_RECEIVED") ? "SILENCED" : "SHOWN")));
+            sender.sendMessage(CC.translate("&8&m------------------------------"));
+            return true;
+        }
+
+        this.usage(sender, label);
+        return true;
     }
 
     private Crate requireCrate(CommandSender sender, String[] args, String label, String sub) {
